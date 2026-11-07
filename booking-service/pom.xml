@@ -17,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>ru.hotel</groupId>
-            <artifactId>jwt-resource-server</artifactId>
+            <artifactId>jwt-resource-server-spring-boot-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

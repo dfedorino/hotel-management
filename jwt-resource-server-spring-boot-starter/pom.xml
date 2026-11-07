@@ -10,8 +10,8 @@
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>jwt-resource-server</artifactId>
-    <name>jwt-resource-server</name>
+    <artifactId>jwt-resource-server-spring-boot-starter</artifactId>
+    <name>jwt-resource-server-spring-boot-starter</name>
     <description>Auto-configuration that makes a servlet service validate HS256 JWTs and answer 401/403 as JSON</description>
 
     <dependencies>
