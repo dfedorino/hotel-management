@@ -9,7 +9,10 @@ import ru.hotel.hotelapi.model.ReleaseRequest;
 import ru.hotel.hotelapi.model.ReservationResponse;
 import ru.hotel.hotelservice.service.RoomAvailabilityService;
 
-/** Internal saga endpoints called by Booking Service; not exposed through the gateway. */
+/**
+ * Internal saga endpoints called by Booking Service (INTERNAL); ADMIN may call them for manual corrections. Not exposed
+ * through the gateway.
+ */
 @RestController
 @RequiredArgsConstructor
 public class RoomAvailabilityController implements RoomAvailabilityApi {
@@ -17,13 +20,13 @@ public class RoomAvailabilityController implements RoomAvailabilityApi {
     private final RoomAvailabilityService availabilityService;
 
     @Override
-    @PreAuthorize("hasRole('INTERNAL')")
+    @PreAuthorize("hasAnyRole('INTERNAL', 'ADMIN')")
     public ReservationResponse confirmAvailability(Long id, AvailabilityRequest request) {
         return availabilityService.confirm(id, request);
     }
 
     @Override
-    @PreAuthorize("hasRole('INTERNAL')")
+    @PreAuthorize("hasAnyRole('INTERNAL', 'ADMIN')")
     public void releaseRoom(Long id, ReleaseRequest request) {
         availabilityService.release(id, request);
     }

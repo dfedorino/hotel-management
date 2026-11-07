@@ -94,10 +94,23 @@ class AccessControlIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(CONFIRM_BODY))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(withToken(post("/api/rooms/1/release"), JwtTokenFixtures.token("root", "ADMIN"))
+        mockMvc.perform(withToken(post("/api/rooms/1/release"), JwtTokenFixtures.token("alice", "USER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"requestId\": \"req-1\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminReachesSagaEndpointsForManualCorrections() throws Exception {
+        mockMvc.perform(withToken(
+                                post("/api/rooms/999999/confirm-availability"), JwtTokenFixtures.token("root", "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CONFIRM_BODY))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(withToken(post("/api/rooms/999999/release"), JwtTokenFixtures.token("root", "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"requestId\": \"req-1\"}"))
+                .andExpect(status().isNotFound());
     }
 
     @Test

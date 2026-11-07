@@ -15,7 +15,7 @@ tags:
   - name: occupancy
     description: Room occupancy statistics (ADMIN)
   - name: room-availability
-    description: Internal saga steps called by Booking Service (INTERNAL), not exposed through the gateway
+    description: Internal saga steps called by Booking Service (INTERNAL) or by ADMIN for manual corrections, not exposed through the gateway
 
 paths:
   /api/hotels:
