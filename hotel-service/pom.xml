@@ -82,6 +82,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <eureka.client.enabled>false</eureka.client.enabled>
+                        <hotel.demo-data.enabled>false</hotel.demo-data.enabled>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

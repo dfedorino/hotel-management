@@ -18,6 +18,10 @@ management:
       exposure:
         include: health,info
 
+hotel:
+  demo-data:
+    enabled: ${DEMO_DATA:true}
+
 security:
   jwt:
     # Must match Booking Service; override with JWT_SECRET outside local development.
