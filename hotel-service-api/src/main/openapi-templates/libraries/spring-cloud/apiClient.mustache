@@ -1,0 +1,11 @@
+package {{package}};
+
+import org.springframework.cloud.openfeign.FeignClient;
+import {{configPackage}}.ClientConfiguration;
+
+/**
+ * Resolved through service discovery by the {@code hotel-service} name; one Feign context per tag.
+ */
+@FeignClient(name = "${{openbrace}}hotel-service.name:hotel-service{{closebrace}}", contextId = "{{classVarName}}", configuration = ClientConfiguration.class)
+public interface {{classname}}Client extends {{classname}} {
+}

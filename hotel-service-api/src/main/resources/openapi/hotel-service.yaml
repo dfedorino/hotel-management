@@ -1,0 +1,432 @@
+openapi: 3.0.3
+info:
+  title: hotel-service
+  description: Hotels and rooms management, room recommendations, occupancy statistics and saga slot locking.
+  version: 1.0.0
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+tags:
+  - name: hotels
+    description: Hotels CRUD (read for USER, write for ADMIN)
+  - name: rooms
+    description: Rooms CRUD and free room search (read for USER, write for ADMIN)
+  - name: occupancy
+    description: Room occupancy statistics (ADMIN)
+  - name: room-availability
+    description: Internal saga steps called by Booking Service (INTERNAL), not exposed through the gateway
+
+paths:
+  /api/hotels:
+    get:
+      tags: [hotels]
+      operationId: listHotels
+      responses:
+        '200':
+          description: All hotels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HotelResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [hotels]
+      operationId: createHotel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HotelRequest'
+      responses:
+        '201':
+          description: Created hotel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/hotels/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [hotels]
+      operationId: getHotel
+      responses:
+        '200':
+          description: Hotel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelResponse'
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [hotels]
+      operationId: updateHotel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HotelRequest'
+      responses:
+        '200':
+          description: Updated hotel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [hotels]
+      operationId: deleteHotel
+      responses:
+        '204':
+          description: Deleted
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/rooms:
+    get:
+      tags: [rooms]
+      operationId: findFreeRooms
+      description: Rooms in service without active reservations for the dates, ordered by id.
+      parameters:
+        - $ref: '#/components/parameters/HotelId'
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          description: Free rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoomResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+    post:
+      tags: [rooms]
+      operationId: createRoom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+      responses:
+        '201':
+          description: Created room
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/rooms/recommend:
+    get:
+      tags: [rooms]
+      operationId: findRecommendedRooms
+      description: Same free rooms ordered by times booked ascending, then by id, to spread load evenly.
+      parameters:
+        - $ref: '#/components/parameters/HotelId'
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          description: Recommended rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoomResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /api/rooms/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [rooms]
+      operationId: getRoom
+      responses:
+        '200':
+          description: Room
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponse'
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [rooms]
+      operationId: updateRoom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomRequest'
+      responses:
+        '200':
+          description: Updated room
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [rooms]
+      operationId: deleteRoom
+      responses:
+        '204':
+          description: Deleted
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/rooms/occupancy:
+    get:
+      tags: [occupancy]
+      operationId: getOccupancy
+      parameters:
+        - $ref: '#/components/parameters/HotelId'
+        - name: startDate
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Occupancy report for [startDate, endDate)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccupancyReport'
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /api/rooms/{id}/confirm-availability:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [room-availability]
+      operationId: confirmAvailability
+      description: Locks the slot and counts the booking; repeating the same requestId returns the stored result.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityRequest'
+      responses:
+        '200':
+          description: Slot locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/rooms/{id}/release:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [room-availability]
+      operationId: releaseRoom
+      description: Compensation; releasing an unknown or already released slot is a no-op.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseRequest'
+      responses:
+        '204':
+          description: Released
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    HotelId:
+      name: hotelId
+      in: query
+      required: false
+      schema: { type: integer, format: int64 }
+    StartDate:
+      name: startDate
+      in: query
+      required: false
+      description: Check-in date; must be given together with endDate.
+      schema: { type: string, format: date }
+    EndDate:
+      name: endDate
+      in: query
+      required: false
+      description: Check-out date (exclusive).
+      schema: { type: string, format: date }
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: Role is not allowed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: Conflicting state (duplicate, overlapping dates, room in use)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [timestamp, status, error, message, path]
+      properties:
+        timestamp: { type: string, format: date-time }
+        status: { type: integer }
+        error: { type: string }
+        message: { type: string }
+        path: { type: string }
+
+    HotelRequest:
+      type: object
+      required: [name, address]
+      properties:
+        name: { type: string, maxLength: 255, pattern: '.*\S.*' }
+        address: { type: string, maxLength: 255, pattern: '.*\S.*' }
+
+    HotelResponse:
+      type: object
+      required: [id, name, address]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        address: { type: string }
+
+    RoomRequest:
+      type: object
+      required: [hotelId, number]
+      properties:
+        hotelId: { type: integer, format: int64 }
+        number: { type: string, maxLength: 32, pattern: '.*\S.*' }
+        available:
+          type: boolean
+          description: Operational availability; omitted means in service.
+
+    RoomResponse:
+      type: object
+      required: [id, hotelId, number, available, timesBooked]
+      properties:
+        id: { type: integer, format: int64 }
+        hotelId: { type: integer, format: int64 }
+        number: { type: string }
+        available: { type: boolean }
+        timesBooked: { type: integer }
+
+    AvailabilityRequest:
+      type: object
+      required: [requestId, bookingId, startDate, endDate]
+      properties:
+        requestId:
+          type: string
+          maxLength: 64
+          pattern: '.*\S.*'
+          description: Correlation id making repeated deliveries idempotent.
+        bookingId: { type: integer, format: int64 }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+
+    ReleaseRequest:
+      type: object
+      required: [requestId]
+      properties:
+        requestId:
+          type: string
+          pattern: '.*\S.*'
+          description: The requestId used to confirm the slot.
+
+    ReservationStatus:
+      type: string
+      enum: [ACTIVE, RELEASED]
+
+    ReservationResponse:
+      type: object
+      required: [id, roomId, bookingId, requestId, startDate, endDate, status]
+      properties:
+        id: { type: integer, format: int64 }
+        roomId: { type: integer, format: int64 }
+        bookingId: { type: integer, format: int64 }
+        requestId: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        status: { $ref: '#/components/schemas/ReservationStatus' }
+
+    RoomOccupancy:
+      type: object
+      required: [roomId, hotelId, number, timesBooked, bookedNights, occupancyRate]
+      properties:
+        roomId: { type: integer, format: int64 }
+        hotelId: { type: integer, format: int64 }
+        number: { type: string }
+        timesBooked: { type: integer }
+        bookedNights: { type: integer, format: int64 }
+        occupancyRate:
+          type: number
+          format: double
+          description: Booked nights divided by nights in the period.
+
+    OccupancyReport:
+      type: object
+      required: [startDate, endDate, periodNights, totalRooms, averageOccupancy, rooms]
+      properties:
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        periodNights: { type: integer, format: int64 }
+        totalRooms: { type: integer }
+        averageOccupancy: { type: number, format: double }
+        rooms:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomOccupancy'
