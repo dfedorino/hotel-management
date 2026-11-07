@@ -1,4 +1,4 @@
-package ru.hotel.hotelservice.security;
+package ru.hotel.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,9 +13,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import ru.hotel.hotelapi.model.ErrorResponse;
 
-/** Writes 401/403 from the security filter chain in the same format as controller errors. */
+/** Writes 401/403 raised by the security filter chain as {@link SecurityErrorBody} JSON. */
 @RequiredArgsConstructor
 public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
 
@@ -37,7 +36,7 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
             throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        ErrorResponse body = new ErrorResponse(
+        SecurityErrorBody body = new SecurityErrorBody(
                 OffsetDateTime.now(ZoneOffset.UTC),
                 status.value(),
                 status.getReasonPhrase(),
