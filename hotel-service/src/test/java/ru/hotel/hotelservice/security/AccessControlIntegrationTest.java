@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = "security.jwt.secret=" + TestTokens.SECRET)
+@TestPropertySource(properties = "security.jwt.secret=" + JwtTokenFixtures.SECRET)
 class AccessControlIntegrationTest {
 
     private static final String HOTEL_BODY = """
@@ -40,32 +40,32 @@ class AccessControlIntegrationTest {
 
     @Test
     void tokenSignedWithForeignSecretGets401() throws Exception {
-        mockMvc.perform(withToken(get("/api/hotels"), TestTokens.foreignToken("USER")))
+        mockMvc.perform(withToken(get("/api/hotels"), JwtTokenFixtures.foreignToken("USER")))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void expiredTokenGets401() throws Exception {
-        mockMvc.perform(withToken(get("/api/hotels"), TestTokens.expiredToken("USER")))
+        mockMvc.perform(withToken(get("/api/hotels"), JwtTokenFixtures.expiredToken("USER")))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void unknownPathGets404WithErrorBody() throws Exception {
-        mockMvc.perform(withToken(get("/api/unknown"), TestTokens.token("alice", "USER")))
+        mockMvc.perform(withToken(get("/api/unknown"), JwtTokenFixtures.token("alice", "USER")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
     void userCanListHotels() throws Exception {
-        mockMvc.perform(withToken(get("/api/hotels"), TestTokens.token("alice", "USER")))
+        mockMvc.perform(withToken(get("/api/hotels"), JwtTokenFixtures.token("alice", "USER")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void userCannotCreateHotel() throws Exception {
-        mockMvc.perform(withToken(post("/api/hotels"), TestTokens.token("alice", "USER"))
+        mockMvc.perform(withToken(post("/api/hotels"), JwtTokenFixtures.token("alice", "USER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(HOTEL_BODY))
                 .andExpect(status().isForbidden())
@@ -74,7 +74,7 @@ class AccessControlIntegrationTest {
 
     @Test
     void adminCanCreateHotel() throws Exception {
-        mockMvc.perform(withToken(post("/api/hotels"), TestTokens.token("root", "ADMIN"))
+        mockMvc.perform(withToken(post("/api/hotels"), JwtTokenFixtures.token("root", "ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(HOTEL_BODY))
                 .andExpect(status().isCreated());
@@ -82,7 +82,7 @@ class AccessControlIntegrationTest {
 
     @Test
     void userCannotSeeOccupancy() throws Exception {
-        mockMvc.perform(withToken(get("/api/rooms/occupancy"), TestTokens.token("alice", "USER"))
+        mockMvc.perform(withToken(get("/api/rooms/occupancy"), JwtTokenFixtures.token("alice", "USER"))
                         .param("startDate", "2027-01-01")
                         .param("endDate", "2027-01-11"))
                 .andExpect(status().isForbidden());
@@ -90,11 +90,11 @@ class AccessControlIntegrationTest {
 
     @Test
     void userCannotCallInternalSagaEndpoints() throws Exception {
-        mockMvc.perform(withToken(post("/api/rooms/1/confirm-availability"), TestTokens.token("alice", "USER"))
+        mockMvc.perform(withToken(post("/api/rooms/1/confirm-availability"), JwtTokenFixtures.token("alice", "USER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(CONFIRM_BODY))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(withToken(post("/api/rooms/1/release"), TestTokens.token("root", "ADMIN"))
+        mockMvc.perform(withToken(post("/api/rooms/1/release"), JwtTokenFixtures.token("root", "ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"requestId\": \"req-1\"}"))
                 .andExpect(status().isForbidden());
@@ -104,7 +104,7 @@ class AccessControlIntegrationTest {
     void internalServiceReachesSagaEndpoint() throws Exception {
         mockMvc.perform(withToken(
                                 post("/api/rooms/999999/confirm-availability"),
-                                TestTokens.token("booking-service", "INTERNAL"))
+                                JwtTokenFixtures.token("booking-service", "INTERNAL"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(CONFIRM_BODY))
                 .andExpect(status().isNotFound());

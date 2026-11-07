@@ -13,11 +13,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.hotel.hotelservice.security.TestTokens;
+import ru.hotel.hotelservice.security.JwtTokenFixtures;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {"hotel.api-docs.enabled=true", "security.jwt.secret=" + TestTokens.SECRET})
+@TestPropertySource(properties = {"hotel.api-docs.enabled=true", "security.jwt.secret=" + JwtTokenFixtures.SECRET})
 class ApiDocumentationIntegrationTest {
 
     @Autowired
@@ -45,7 +45,7 @@ class ApiDocumentationIntegrationTest {
         // when / then
         mockMvc.perform(get("/v3/api-docs")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/v3/api-docs")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + TestTokens.token("root", "ADMIN")))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + JwtTokenFixtures.token("root", "ADMIN")))
                 .andExpect(status().isForbidden());
     }
 }

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -204,9 +205,8 @@ class RoomAvailabilityServiceIntegrationTest {
     }
 
     private static List<Boolean> runConcurrently(List<Callable<Boolean>> tasks, CountDownLatch startSignal)
-            throws Exception {
-        ExecutorService executor = Executors.newFixedThreadPool(tasks.size());
-        try {
+            throws InterruptedException, ExecutionException {
+        try (ExecutorService executor = Executors.newFixedThreadPool(tasks.size())) {
             List<Future<Boolean>> futures = new ArrayList<>();
             for (Callable<Boolean> task : tasks) {
                 futures.add(executor.submit(task));
@@ -217,8 +217,6 @@ class RoomAvailabilityServiceIntegrationTest {
                 results.add(future.get());
             }
             return results;
-        } finally {
-            executor.shutdownNow();
         }
     }
 

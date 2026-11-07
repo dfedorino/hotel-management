@@ -21,11 +21,8 @@ class HotelServiceErrorDecoderTest {
 
     @Test
     void conflictBecomesTypedExceptionWithServerMessage() {
-        // given
-        Response response = response(409, errorBody(409, "Room 5 is not available from 2027-01-10 to 2027-01-15"));
-
         // when
-        Exception exception = decoder.decode(METHOD_KEY, response);
+        Exception exception = decode(409, errorBody(409, "Room 5 is not available from 2027-01-10 to 2027-01-15"));
 
         // then
         assertThat(exception)
@@ -38,8 +35,8 @@ class HotelServiceErrorDecoderTest {
     @Test
     void notFoundAndBadRequestBecomeTypedExceptions() {
         // when
-        Exception notFound = decoder.decode(METHOD_KEY, response(404, errorBody(404, "Room 5 not found")));
-        Exception badRequest = decoder.decode(METHOD_KEY, response(400, errorBody(400, "bad dates")));
+        Exception notFound = decode(404, errorBody(404, "Room 5 not found"));
+        Exception badRequest = decode(400, errorBody(400, "bad dates"));
 
         // then
         assertThat(notFound).isInstanceOf(HotelServiceNotFoundException.class);
@@ -49,7 +46,7 @@ class HotelServiceErrorDecoderTest {
     @Test
     void unreadableBodyFallsBackToStatusDescription() {
         // when
-        Exception exception = decoder.decode(METHOD_KEY, response(409, "<html>oops</html>"));
+        Exception exception = decode(409, "<html>oops</html>");
 
         // then
         assertThat(exception).isInstanceOf(HotelServiceConflictException.class).hasMessageContaining("409");
@@ -59,7 +56,7 @@ class HotelServiceErrorDecoderTest {
     @Test
     void serverErrorsStayFeignExceptionsSoCallersCanRetry() {
         // when
-        Exception exception = decoder.decode(METHOD_KEY, response(503, errorBody(503, "down")));
+        Exception exception = decode(503, errorBody(503, "down"));
 
         // then
         assertThat(exception).isInstanceOf(FeignException.class).isNotInstanceOf(HotelServiceClientException.class);
@@ -71,6 +68,12 @@ class HotelServiceErrorDecoderTest {
                 {"timestamp": "2027-01-01T10:00:00+03:00", "status": %d, "error": "Error",
                  "message": "%s", "path": "/api/rooms/5/confirm-availability"}
                 """.formatted(status, message);
+    }
+
+    private Exception decode(int status, String body) {
+        try (Response response = response(status, body)) {
+            return decoder.decode(METHOD_KEY, response);
+        }
     }
 
     private static Response response(int status, String body) {

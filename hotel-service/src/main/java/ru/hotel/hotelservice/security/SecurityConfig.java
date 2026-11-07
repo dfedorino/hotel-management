@@ -39,6 +39,7 @@ public class SecurityConfig {
     private static final String[] GENERATED_SPEC_PATHS = {"/v3/api-docs", "/v3/api-docs/**"};
 
     @Bean
+    @SuppressWarnings("PMD.SignatureDeclareThrowsException") // HttpSecurity.build() declares Exception
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             SecurityErrorHandler errorHandler,

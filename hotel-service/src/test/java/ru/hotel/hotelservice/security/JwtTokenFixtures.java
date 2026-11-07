@@ -13,11 +13,11 @@ import java.util.Date;
 import java.util.List;
 
 /** Issues HS256 tokens the way Booking Service does, for security tests. */
-public final class TestTokens {
+public final class JwtTokenFixtures {
 
     public static final String SECRET = "test-secret-test-secret-test-secret-0123";
 
-    private TestTokens() {}
+    private JwtTokenFixtures() {}
 
     public static String token(String subject, String role) {
         return sign(SECRET, subject, role, Instant.now().plus(Duration.ofHours(1)));

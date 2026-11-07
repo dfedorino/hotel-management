@@ -8,6 +8,7 @@ import feign.codec.ErrorDecoder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
+import lombok.extern.slf4j.Slf4j;
 import ru.hotel.hotelapi.error.HotelServiceBadRequestException;
 import ru.hotel.hotelapi.error.HotelServiceConflictException;
 import ru.hotel.hotelapi.error.HotelServiceNotFoundException;
@@ -17,6 +18,7 @@ import ru.hotel.hotelapi.model.ErrorResponse;
  * Maps rejected requests (400, 404, 409) to typed exceptions; anything else, including 5xx, is left to Feign's default
  * decoder so that callers can treat it as a transient failure.
  */
+@Slf4j
 public class HotelServiceErrorDecoder implements ErrorDecoder {
 
     private final ErrorDecoder fallback = new ErrorDecoder.Default();
@@ -39,7 +41,7 @@ public class HotelServiceErrorDecoder implements ErrorDecoder {
             try (InputStream body = response.body().asInputStream()) {
                 return objectMapper.readValue(body, ErrorResponse.class);
             } catch (IOException ex) {
-                // not an ErrorResponse (e.g. a proxy page): describe the status instead
+                log.debug("Hotel Service answered {} with a body that is not an ErrorResponse", response.status(), ex);
             }
         }
         return new ErrorResponse(

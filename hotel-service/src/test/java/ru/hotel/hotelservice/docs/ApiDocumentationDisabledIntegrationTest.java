@@ -11,11 +11,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.hotel.hotelservice.security.TestTokens;
+import ru.hotel.hotelservice.security.JwtTokenFixtures;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {"hotel.api-docs.enabled=false", "security.jwt.secret=" + TestTokens.SECRET})
+@TestPropertySource(properties = {"hotel.api-docs.enabled=false", "security.jwt.secret=" + JwtTokenFixtures.SECRET})
 class ApiDocumentationDisabledIntegrationTest {
 
     @Autowired
@@ -32,7 +32,8 @@ class ApiDocumentationDisabledIntegrationTest {
     @ValueSource(strings = {"/openapi/hotel-service.yaml", "/swagger-ui/index.html", "/v3/api-docs/swagger-config"})
     void documentationDoesNotExistWhenSwitchedOff(String path) throws Exception {
         // when / then
-        mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + TestTokens.token("root", "ADMIN")))
+        mockMvc.perform(get(path)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + JwtTokenFixtures.token("root", "ADMIN")))
                 .andExpect(status().isNotFound());
     }
 }

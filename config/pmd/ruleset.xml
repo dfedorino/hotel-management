@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="hotel-management"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    <description>
+        Bug-prone code, best practices and design smells. Formatting and naming are left to Spotless and
+        Checkstyle; rules that clash with Spring/JPA/Lombok idioms are excluded with a reason.
+    </description>
+
+    <rule ref="category/java/bestpractices.xml">
+        <!-- JUnit 5 + AssertJ: assertions often live in helpers, test classes are package-private by convention. -->
+        <exclude name="UnitTestShouldIncludeAssert"/>
+        <exclude name="UnitTestContainsTooManyAsserts"/>
+        <exclude name="UnitTestAssertionsShouldIncludeMessage"/>
+        <!-- Exceptions are logged by the global handler with SLF4J placeholders. -->
+        <exclude name="GuardLogStatement"/>
+        <!-- Single-method service and MapStruct interfaces are not meant to be implemented by lambdas. -->
+        <exclude name="ImplicitFunctionalInterface"/>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml">
+        <!-- Serialization is not used for exceptions or entities. -->
+        <exclude name="MissingSerialVersionUID"/>
+        <!-- Lombok and JPA require mutable fields and default constructors. -->
+        <exclude name="AvoidFieldNameMatchingMethodName"/>
+        <!-- String literals in log messages and queries are clearer inline. -->
+        <exclude name="AvoidDuplicateLiterals"/>
+        <!-- The last-resort handler deliberately catches every exception to answer with ErrorResponse. -->
+        <exclude name="AvoidCatchingGenericException"/>
+    </rule>
+
+    <rule ref="category/java/design.xml">
+        <!-- Fluent APIs (AssertJ, MockMvc, Spring builders) are idiomatic here. -->
+        <exclude name="LawOfDemeter"/>
+        <!-- Entities and DTOs are data classes by design. -->
+        <exclude name="DataClass"/>
+        <!-- Covered by Checkstyle MethodLength/CyclomaticComplexity with project limits. -->
+        <exclude name="CyclomaticComplexity"/>
+        <exclude name="NcssCount"/>
+        <!-- Spring @Configuration classes and controllers must not be final (CGLIB proxies). -->
+        <exclude name="ClassWithOnlyPrivateConstructorsShouldBeFinal"/>
+        <!-- Many small exception subclasses are intentional (one per HTTP status). -->
+        <exclude name="ExcessiveImports"/>
+        <exclude name="TooManyMethods"/>
+        <!-- Needs an explicit package list; layering is checked by ArchUnit tests instead. -->
+        <exclude name="LoosePackageCoupling"/>
+    </rule>
+
+    <rule ref="category/java/multithreading.xml">
+        <!-- Spring singletons are stateless; the test executor is short-lived. -->
+        <exclude name="DoNotUseThreads"/>
+        <exclude name="UseConcurrentHashMap"/>
+    </rule>
+
+    <rule ref="category/java/performance.xml"/>
+
+    <rule ref="category/java/security.xml"/>
+</ruleset>
