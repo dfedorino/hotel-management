@@ -42,6 +42,19 @@
         <jacoco.version>0.8.15</jacoco.version>
         <archunit.version>1.5.0</archunit.version>
         <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
+        <sonar-maven-plugin.version>5.7.0.6970</sonar-maven-plugin.version>
+
+        <!-- SonarCloud: `./mvnw verify sonar:sonar`, token is read from the SONAR_TOKEN environment variable. -->
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.organization>dfedorino</sonar.organization>
+        <sonar.projectKey>hotel-management</sonar.projectKey>
+        <sonar.projectName>hotel-management</sonar.projectName>
+        <sonar.exclusions>**/target/generated-sources/**</sonar.exclusions>
+        <sonar.coverage.exclusions>**/*Application.java,**/demo/**</sonar.coverage.exclusions>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.java.checkstyle.reportPaths>${project.build.directory}/checkstyle-result.xml</sonar.java.checkstyle.reportPaths>
+        <sonar.java.pmd.reportPaths>${project.build.directory}/pmd.xml</sonar.java.pmd.reportPaths>
+        <sonar.java.spotbugs.reportPaths>${project.build.directory}/spotbugsXml.xml</sonar.java.spotbugs.reportPaths>
         <jacoco.line.minimum>0.85</jacoco.line.minimum>
         <jacoco.branch.minimum>0.75</jacoco.branch.minimum>
     </properties>
@@ -86,6 +99,11 @@
                     <groupId>org.openapitools</groupId>
                     <artifactId>openapi-generator-maven-plugin</artifactId>
                     <version>${openapi-generator.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>${sonar-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
