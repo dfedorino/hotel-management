@@ -11,6 +11,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static ru.hotel.bookingservice.stubs.HotelServiceStubs.confirmsOf;
+import static ru.hotel.bookingservice.stubs.HotelServiceStubs.eventually;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
@@ -78,16 +80,14 @@ class HotelServiceAdapterIntegrationTest {
         HOTEL.stubFor(post(CONFIRM_PATH).willReturn(json(200, RESERVATION)));
 
         // when
-        hotelAvailability.confirm(5L, 100L, "req-1", START, END);
+        hotelAvailability.confirm(5L, 100L, "req-token", START, END);
 
         // then
-        HOTEL.verify(postRequestedFor(urlPathEqualTo(CONFIRM_PATH))
+        HOTEL.verify(confirmsOf(5L, "req-token")
                 .withHeader(HttpHeaders.AUTHORIZATION, matching("Bearer .+"))
-                .withRequestBody(matchingJsonPath("$.requestId", equalTo("req-1")))
                 .withRequestBody(matchingJsonPath("$.bookingId", equalTo("100"))));
-        String token = HOTEL.getAllServeEvents()
+        String token = HOTEL.findAll(confirmsOf(5L, "req-token"))
                 .getFirst()
-                .getRequest()
                 .getHeader(HttpHeaders.AUTHORIZATION)
                 .substring("Bearer ".length());
         assertThat(jwtDecoder.decode(token).getClaimAsStringList("roles")).containsExactly("INTERNAL");
@@ -99,11 +99,11 @@ class HotelServiceAdapterIntegrationTest {
         HOTEL.stubFor(post(CONFIRM_PATH).willReturn(json(200, RESERVATION)));
 
         // when
-        hotelAvailability.confirm(5L, 100L, "req-1", START, END);
+        hotelAvailability.confirm(5L, 100L, "req-trace", START, END);
 
         // then
-        HOTEL.verify(postRequestedFor(urlPathEqualTo(CONFIRM_PATH))
-                .withHeader("traceparent", matching("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]")));
+        HOTEL.verify(
+                confirmsOf(5L, "req-trace").withHeader("traceparent", matching("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]")));
     }
 
     @Test
@@ -125,10 +125,10 @@ class HotelServiceAdapterIntegrationTest {
                 .willReturn(json(200, RESERVATION)));
 
         // when
-        hotelAvailability.confirm(5L, 100L, "req-1", START, END);
+        hotelAvailability.confirm(5L, 100L, "req-retry", START, END);
 
         // then
-        HOTEL.verify(3, postRequestedFor(urlPathEqualTo(CONFIRM_PATH)));
+        HOTEL.verify(3, confirmsOf(5L, "req-retry"));
     }
 
     @Test
@@ -137,9 +137,10 @@ class HotelServiceAdapterIntegrationTest {
         HOTEL.stubFor(post(CONFIRM_PATH).willReturn(json(200, RESERVATION).withFixedDelay(1_000)));
 
         // when / then
-        assertThatThrownBy(() -> hotelAvailability.confirm(5L, 100L, "req-1", START, END))
+        assertThatThrownBy(() -> hotelAvailability.confirm(5L, 100L, "req-timeout", START, END))
                 .isInstanceOf(RetryableException.class);
-        HOTEL.verify(3, postRequestedFor(urlPathEqualTo(CONFIRM_PATH)));
+        // a delayed request is journaled when its response completes, possibly after this test: count by requestId
+        eventually(() -> HOTEL.verify(3, confirmsOf(5L, "req-timeout")));
     }
 
     @Test
@@ -148,10 +149,10 @@ class HotelServiceAdapterIntegrationTest {
         HOTEL.stubFor(post(CONFIRM_PATH).willReturn(json(409, error(409, "Room 5 is not available"))));
 
         // when / then
-        assertThatThrownBy(() -> hotelAvailability.confirm(5L, 100L, "req-1", START, END))
+        assertThatThrownBy(() -> hotelAvailability.confirm(5L, 100L, "req-conflict", START, END))
                 .isInstanceOf(HotelServiceConflictException.class)
                 .hasMessage("Room 5 is not available");
-        HOTEL.verify(1, postRequestedFor(urlPathEqualTo(CONFIRM_PATH)));
+        HOTEL.verify(1, confirmsOf(5L, "req-conflict"));
     }
 
     @Test
@@ -159,14 +160,14 @@ class HotelServiceAdapterIntegrationTest {
         // given
         HOTEL.stubFor(post(CONFIRM_PATH).willReturn(aResponse().withStatus(503)));
         for (int call = 0; call < 2; call++) {
-            assertThatThrownBy(() -> hotelAvailability.confirm(5L, 100L, "req-1", START, END));
+            assertThatThrownBy(() -> hotelAvailability.confirm(5L, 100L, "req-circuit", START, END));
         }
-        int callsBeforeOpen = HOTEL.getAllServeEvents().size();
+        int callsBeforeOpen = HOTEL.findAll(confirmsOf(5L, "req-circuit")).size();
 
         // when / then
-        assertThatThrownBy(() -> hotelAvailability.confirm(5L, 100L, "req-1", START, END))
+        assertThatThrownBy(() -> hotelAvailability.confirm(5L, 100L, "req-circuit", START, END))
                 .isInstanceOf(CallNotPermittedException.class);
-        assertThat(HOTEL.getAllServeEvents()).hasSize(callsBeforeOpen);
+        assertThat(HOTEL.findAll(confirmsOf(5L, "req-circuit"))).hasSize(callsBeforeOpen);
     }
 
     @Test

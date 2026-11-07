@@ -17,6 +17,8 @@
     <properties>
         <gatling.version>3.15.1</gatling.version>
         <gatling-maven-plugin.version>4.21.11</gatling-maven-plugin.version>
+        <!-- Gatling runs on Netty 4.2; the Spring Boot BOM would pin 4.1, which this module does not use otherwise. -->
+        <netty.version>4.2.14.Final</netty.version>
         <!-- No production code here: coverage and bytecode checks do not apply. -->
         <jacoco.skip>true</jacoco.skip>
         <spotbugs.skip>true</spotbugs.skip>

@@ -6,13 +6,15 @@ import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.hotel.bookingservice.stubs.HotelServiceStubs.confirmsOf;
+import static ru.hotel.bookingservice.stubs.HotelServiceStubs.eventually;
+import static ru.hotel.bookingservice.stubs.HotelServiceStubs.releasesOf;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
@@ -135,7 +137,7 @@ class BookingFlowIntegrationTest {
         // then
         assertThat(bookingRepository.findByRequestId("req-1").orElseThrow().getStatus())
                 .isEqualTo(BookingStatus.CANCELLED);
-        HOTEL.verify(0, postRequestedFor(urlPathEqualTo(RELEASE_PATH)));
+        HOTEL.verify(0, releasesOf(5L, "req-1"));
     }
 
     @Test
@@ -144,13 +146,16 @@ class BookingFlowIntegrationTest {
         HOTEL.stubFor(post(CONFIRM_PATH).willReturn(reservation().withFixedDelay(1_000)));
 
         // when
-        book(aliceToken, "req-1").andExpect(status().isServiceUnavailable());
+        book(aliceToken, "req-timeout").andExpect(status().isServiceUnavailable());
 
         // then
-        assertThat(bookingRepository.findByRequestId("req-1").orElseThrow().getStatus())
+        assertThat(bookingRepository
+                        .findByRequestId("req-timeout")
+                        .orElseThrow()
+                        .getStatus())
                 .isEqualTo(BookingStatus.CANCELLED);
-        HOTEL.verify(3, postRequestedFor(urlPathEqualTo(CONFIRM_PATH)));
-        HOTEL.verify(1, postRequestedFor(urlPathEqualTo(RELEASE_PATH)));
+        eventually(() -> HOTEL.verify(3, confirmsOf(5L, "req-timeout")));
+        HOTEL.verify(1, releasesOf(5L, "req-timeout"));
     }
 
     @Test
@@ -169,7 +174,7 @@ class BookingFlowIntegrationTest {
         // then
         assertThat((Integer) JsonPath.read(second, "$.id")).isEqualTo(JsonPath.read(first, "$.id"));
         assertThat(bookingRepository.count()).isEqualTo(1);
-        HOTEL.verify(1, postRequestedFor(urlPathEqualTo(CONFIRM_PATH)));
+        HOTEL.verify(1, confirmsOf(5L, "req-1"));
     }
 
     @Test
@@ -204,7 +209,7 @@ class BookingFlowIntegrationTest {
         // then
         assertThat(bookingRepository.findById(id.longValue()).orElseThrow().getStatus())
                 .isEqualTo(BookingStatus.CANCELLED);
-        HOTEL.verify(1, postRequestedFor(urlPathMatching(RELEASE_PATH)));
+        HOTEL.verify(1, releasesOf(5L, "req-1"));
     }
 
     @Test
