@@ -64,6 +64,16 @@
         <jacoco.branch.minimum>0.75</jacoco.branch.minimum>
     </properties>
 
+    <profiles>
+        <!-- Load tests need the whole system running: ./mvnw -Pload-tests -pl load-tests gatling:test -->
+        <profile>
+            <id>load-tests</id>
+            <modules>
+                <module>load-tests</module>
+            </modules>
+        </profile>
+    </profiles>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
