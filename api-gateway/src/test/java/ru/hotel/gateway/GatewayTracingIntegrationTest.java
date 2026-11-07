@@ -49,7 +49,7 @@ class GatewayTracingIntegrationTest {
         BOOKING.stubFor(post(anyUrl()).willReturn(aResponse().withStatus(201)));
 
         // when
-        String traceId = mockMvc.perform(MockMvcRequestBuilders.post("/api/bookings/user/register")
+        String traceId = mockMvc.perform(MockMvcRequestBuilders.post("/api/bookings/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isCreated())

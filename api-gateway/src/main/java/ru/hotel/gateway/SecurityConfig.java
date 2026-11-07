@@ -14,7 +14,7 @@ import ru.hotel.security.jwt.JwtResourceServerConfigurer;
 @Configuration
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_POSTS = {"/api/bookings/user/register", "/api/bookings/user/auth"};
+    private static final String[] PUBLIC_POSTS = {"/api/bookings/users/register", "/api/bookings/users/auth"};
     private static final String HEALTH_PATH = "/actuator/health";
 
     @Bean

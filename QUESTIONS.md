@@ -70,3 +70,7 @@ PIT вносит небольшие изменения в код («мутант
 Пока по умолчанию: как описано выше.
 
 **Ответ:** давай не будем срезать префиксы, раз в ТЗ указано /api/bookings/** и /api/hotels/**, то такими их и оставим. /api/rooms ок, swagger ui ок
+
+**Сделано:** Gateway префиксы не срезает; пути Booking Service в REST-стиле под `/api/bookings`:
+`POST /api/bookings/users/register`, `POST /api/bookings/users/auth`, `POST|PATCH|DELETE /api/bookings/users[/{id}]` (ADMIN),
+`POST /api/bookings` (создать), `GET /api/bookings` (история), `GET|DELETE /api/bookings/{id}`.

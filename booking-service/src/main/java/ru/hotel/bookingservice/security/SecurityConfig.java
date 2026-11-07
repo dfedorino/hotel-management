@@ -14,7 +14,7 @@ import ru.hotel.security.jwt.JwtResourceServerConfigurer;
 @Configuration
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_POSTS = {"/user/register", "/user/auth"};
+    private static final String[] PUBLIC_POSTS = {"/api/bookings/users/register", "/api/bookings/users/auth"};
     private static final String HEALTH_PATH = "/actuator/health";
 
     /** Exactly what Swagger UI needs: the contract file, the UI assets and the UI config. */

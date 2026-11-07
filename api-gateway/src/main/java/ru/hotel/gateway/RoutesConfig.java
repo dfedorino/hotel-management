@@ -1,6 +1,5 @@
 package ru.hotel.gateway;
 
-import static org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions.stripPrefix;
 import static org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions.uri;
 import static org.springframework.cloud.gateway.server.mvc.filter.LoadBalancerFilterFunctions.lb;
 import static org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions.route;
@@ -16,22 +15,20 @@ import org.springframework.web.servlet.function.RouterFunctions;
 import org.springframework.web.servlet.function.ServerResponse;
 
 /**
- * Public routes. Booking Service paths are published under {@code /api/bookings} and reach the service without that
- * prefix ({@code /api/bookings/user/register} becomes {@code /user/register}). Rooms are routed one path segment deep
- * only, so the internal {@code /api/rooms/{id}/confirm-availability} and {@code /release} are never exposed.
+ * Public routes; paths reach the services unchanged. Rooms are routed one path segment deep only, so the internal
+ * {@code /api/rooms/{id}/confirm-availability} and {@code /release} are never exposed.
  */
 @Configuration
 public class RoutesConfig {
 
-    private static final int BOOKINGS_PREFIX_PARTS = 2;
     private static final String LOAD_BALANCED = "lb";
 
     @Bean
     public RouterFunction<ServerResponse> bookingRoutes(RouteProperties properties) {
-        RouterFunctions.Builder builder = route("booking-service")
-                .route(path("/api/bookings/**"), http())
-                .before(stripPrefix(BOOKINGS_PREFIX_PARTS));
-        return toBackend(builder, properties.bookingServiceUri()).build();
+        return toBackend(
+                        proxy("booking-service", path("/api/bookings", "/api/bookings/**")),
+                        properties.bookingServiceUri())
+                .build();
     }
 
     @Bean

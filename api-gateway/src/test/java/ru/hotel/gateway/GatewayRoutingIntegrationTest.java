@@ -61,26 +61,24 @@ class GatewayRoutingIntegrationTest {
     }
 
     @Test
-    void registrationIsPublicAndReachesBookingServiceWithoutPrefix() throws Exception {
+    void registrationIsPublicAndReachesBookingServiceUnchanged() throws Exception {
         // when / then
-        mockMvc.perform(post("/api/bookings/user/register")
+        mockMvc.perform(post("/api/bookings/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isCreated());
-        BOOKING.verify(postRequestedFor(urlPathEqualTo("/user/register")));
+        BOOKING.verify(postRequestedFor(urlPathEqualTo("/api/bookings/users/register")));
     }
 
     @Test
-    void bookingPathsAreStrippedOfTheGatewayPrefixAndKeepTheToken() throws Exception {
+    void bookingPathsReachBookingServiceUnchangedWithTheToken() throws Exception {
         // given
         String token = GatewayTestTokens.valid();
 
         // when / then
-        mockMvc.perform(get("/api/bookings/bookings")
-                        .param("page", "0")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+        mockMvc.perform(get("/api/bookings").param("page", "0").header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isOk());
-        BOOKING.verify(getRequestedFor(urlPathEqualTo("/bookings"))
+        BOOKING.verify(getRequestedFor(urlPathEqualTo("/api/bookings"))
                 .withQueryParam("page", equalTo("0"))
                 .withHeader(HttpHeaders.AUTHORIZATION, equalTo(bearer(token))));
     }
@@ -123,7 +121,7 @@ class GatewayRoutingIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.path").value("/api/hotels"));
-        mockMvc.perform(get("/api/bookings/bookings").header(HttpHeaders.AUTHORIZATION, bearer(expired)))
+        mockMvc.perform(get("/api/bookings").header(HttpHeaders.AUTHORIZATION, bearer(expired)))
                 .andExpect(status().isUnauthorized());
         HOTEL.verify(0, anyRequestedFor(anyUrl()));
         BOOKING.verify(0, anyRequestedFor(anyUrl()));

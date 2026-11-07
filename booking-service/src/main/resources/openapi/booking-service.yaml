@@ -16,7 +16,7 @@ tags:
     description: Own bookings (USER)
 
 paths:
-  /user/register:
+  /api/bookings/users/register:
     post:
       tags: [auth]
       operationId: register
@@ -37,7 +37,7 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '409': { $ref: '#/components/responses/Conflict' }
 
-  /user/auth:
+  /api/bookings/users/auth:
     post:
       tags: [auth]
       operationId: authenticate
@@ -58,7 +58,7 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
-  /user:
+  /api/bookings/users:
     post:
       tags: [users]
       operationId: createUser
@@ -80,7 +80,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
 
-  /user/{id}:
+  /api/bookings/users/{id}:
     parameters:
       - $ref: '#/components/parameters/Id'
     patch:
@@ -113,7 +113,30 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
-  /booking:
+  /api/bookings:
+    get:
+      tags: [bookings]
+      operationId: listBookings
+      description: Bookings of the current user, newest first.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Page of bookings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingPage'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
     post:
       tags: [bookings]
       operationId: createBooking
@@ -139,31 +162,7 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
 
-  /bookings:
-    get:
-      tags: [bookings]
-      operationId: listBookings
-      description: Bookings of the current user, newest first.
-      parameters:
-        - name: page
-          in: query
-          required: false
-          schema: { type: integer, minimum: 0, default: 0 }
-        - name: size
-          in: query
-          required: false
-          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
-      responses:
-        '200':
-          description: Page of bookings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookingPage'
-        '400': { $ref: '#/components/responses/BadRequest' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-
-  /booking/{id}:
+  /api/bookings/{id}:
     parameters:
       - $ref: '#/components/parameters/Id'
     get:

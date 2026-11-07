@@ -107,10 +107,10 @@ class BookingFlowIntegrationTest {
 
         // then
         Integer id = JsonPath.read(body, "$.id");
-        mockMvc.perform(get("/booking/" + id).header(HttpHeaders.AUTHORIZATION, bearer(aliceToken)))
+        mockMvc.perform(get("/api/bookings/" + id).header(HttpHeaders.AUTHORIZATION, bearer(aliceToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.requestId").value("req-1"));
-        mockMvc.perform(get("/bookings").header(HttpHeaders.AUTHORIZATION, bearer(aliceToken)))
+        mockMvc.perform(get("/api/bookings").header(HttpHeaders.AUTHORIZATION, bearer(aliceToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(id));
@@ -177,11 +177,11 @@ class BookingFlowIntegrationTest {
         Integer id = JsonPath.read(body, "$.id");
 
         // when / then
-        mockMvc.perform(get("/booking/" + id).header(HttpHeaders.AUTHORIZATION, bearer(bobToken)))
+        mockMvc.perform(get("/api/bookings/" + id).header(HttpHeaders.AUTHORIZATION, bearer(bobToken)))
                 .andExpect(status().isNotFound());
-        mockMvc.perform(delete("/booking/" + id).header(HttpHeaders.AUTHORIZATION, bearer(bobToken)))
+        mockMvc.perform(delete("/api/bookings/" + id).header(HttpHeaders.AUTHORIZATION, bearer(bobToken)))
                 .andExpect(status().isNotFound());
-        mockMvc.perform(get("/bookings").header(HttpHeaders.AUTHORIZATION, bearer(bobToken)))
+        mockMvc.perform(get("/api/bookings").header(HttpHeaders.AUTHORIZATION, bearer(bobToken)))
                 .andExpect(jsonPath("$.totalElements").value(0));
     }
 
@@ -193,9 +193,9 @@ class BookingFlowIntegrationTest {
         Integer id = JsonPath.read(body, "$.id");
 
         // when
-        mockMvc.perform(delete("/booking/" + id).header(HttpHeaders.AUTHORIZATION, bearer(aliceToken)))
+        mockMvc.perform(delete("/api/bookings/" + id).header(HttpHeaders.AUTHORIZATION, bearer(aliceToken)))
                 .andExpect(status().isNoContent());
-        mockMvc.perform(delete("/booking/" + id).header(HttpHeaders.AUTHORIZATION, bearer(aliceToken)))
+        mockMvc.perform(delete("/api/bookings/" + id).header(HttpHeaders.AUTHORIZATION, bearer(aliceToken)))
                 .andExpect(status().isNoContent());
 
         // then
@@ -207,14 +207,14 @@ class BookingFlowIntegrationTest {
     @Test
     void bookingNeedsToken() throws Exception {
         // when / then
-        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingBody("req-1")))
                 .andExpect(status().isUnauthorized());
     }
 
     private ResultActions book(String token, String requestId) throws Exception {
-        return mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+        return mockMvc.perform(MockMvcRequestBuilders.post("/api/bookings")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bookingBody(requestId)));

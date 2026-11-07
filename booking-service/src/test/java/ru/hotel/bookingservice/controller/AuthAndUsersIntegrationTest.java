@@ -42,7 +42,7 @@ class AuthAndUsersIntegrationTest {
     @Test
     void registeredUserGetsBearerTokenValidForOneHour() throws Exception {
         // when / then
-        mockMvc.perform(post("/user/register")
+        mockMvc.perform(post("/api/bookings/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credentials("alice", "secret-pass")))
                 .andExpect(status().isCreated())
@@ -57,7 +57,7 @@ class AuthAndUsersIntegrationTest {
         register("alice");
 
         // when / then
-        mockMvc.perform(post("/user/register")
+        mockMvc.perform(post("/api/bookings/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credentials("alice", "other-pass")))
                 .andExpect(status().isConflict())
@@ -67,7 +67,7 @@ class AuthAndUsersIntegrationTest {
     @Test
     void registrationValidatesCredentials() throws Exception {
         // when / then
-        mockMvc.perform(post("/user/register")
+        mockMvc.perform(post("/api/bookings/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credentials("al", "short")))
                 .andExpect(status().isBadRequest())
@@ -80,12 +80,12 @@ class AuthAndUsersIntegrationTest {
         register("alice");
 
         // when / then
-        mockMvc.perform(post("/user/auth")
+        mockMvc.perform(post("/api/bookings/users/auth")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credentials("alice", "wrong-pass")))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Invalid username or password"))
-                .andExpect(jsonPath("$.path").value("/user/auth"));
+                .andExpect(jsonPath("$.path").value("/api/bookings/users/auth"));
     }
 
     @Test
@@ -94,7 +94,7 @@ class AuthAndUsersIntegrationTest {
         String userToken = register("alice");
 
         // when / then
-        mockMvc.perform(post("/user")
+        mockMvc.perform(post("/api/bookings/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(newUser("bob", "USER")))
@@ -108,7 +108,7 @@ class AuthAndUsersIntegrationTest {
         String adminToken = login("root", "root-pass-1");
 
         // when
-        String created = mockMvc.perform(post("/user")
+        String created = mockMvc.perform(post("/api/bookings/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(newUser("bob", "USER")))
@@ -120,21 +120,21 @@ class AuthAndUsersIntegrationTest {
         Integer id = JsonPath.read(created, "$.id");
 
         // then
-        mockMvc.perform(patch("/user/" + id)
+        mockMvc.perform(patch("/api/bookings/users/" + id)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\": \"ADMIN\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("ADMIN"))
                 .andExpect(jsonPath("$.username").value("bob"));
-        mockMvc.perform(delete("/user/" + id).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+        mockMvc.perform(delete("/api/bookings/users/" + id).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isNoContent());
-        mockMvc.perform(delete("/user/" + id).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+        mockMvc.perform(delete("/api/bookings/users/" + id).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isNotFound());
     }
 
     private String register(String username) throws Exception {
-        String body = mockMvc.perform(post("/user/register")
+        String body = mockMvc.perform(post("/api/bookings/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credentials(username, "secret-pass")))
                 .andReturn()
@@ -144,7 +144,7 @@ class AuthAndUsersIntegrationTest {
     }
 
     private String login(String username, String password) throws Exception {
-        String body = mockMvc.perform(post("/user/auth")
+        String body = mockMvc.perform(post("/api/bookings/users/auth")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(credentials(username, password)))
                 .andExpect(status().isOk())
