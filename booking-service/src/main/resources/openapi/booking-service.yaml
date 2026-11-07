@@ -107,11 +107,13 @@ paths:
     delete:
       tags: [users]
       operationId: deleteUser
+      description: A user with bookings cannot be deleted, the bookings keep the stay history.
       responses:
         '204':
           description: Deleted
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
 
   /api/bookings:
     get:

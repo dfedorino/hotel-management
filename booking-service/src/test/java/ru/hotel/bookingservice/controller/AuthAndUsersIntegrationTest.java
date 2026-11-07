@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import java.time.Instant;
+import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +18,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.hotel.bookingservice.domain.Booking;
 import ru.hotel.bookingservice.domain.Role;
 import ru.hotel.bookingservice.domain.User;
+import ru.hotel.bookingservice.repository.BookingRepository;
 import ru.hotel.bookingservice.repository.UserRepository;
 
 @SpringBootTest
@@ -34,9 +38,30 @@ class AuthAndUsersIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private BookingRepository bookingRepository;
+
     @AfterEach
     void tearDown() {
+        bookingRepository.deleteAll();
         userRepository.deleteAll();
+    }
+
+    @Test
+    void userWithBookingsCannotBeDeleted() throws Exception {
+        // given
+        userRepository.save(new User("root", passwordEncoder.encode("root-pass-1"), Role.ADMIN));
+        String adminToken = login("root", "root-pass-1");
+        User guest = userRepository.save(new User("bob", "hash", Role.USER));
+        bookingRepository.save(new Booking(
+                guest.getId(), 5L, LocalDate.of(2027, 1, 10), LocalDate.of(2027, 1, 15), "req-1", Instant.now()));
+
+        // when / then
+        mockMvc.perform(delete("/api/bookings/users/" + guest.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isConflict())
+                .andExpect(
+                        jsonPath("$.message").value("User " + guest.getId() + " has bookings and cannot be deleted"));
     }
 
     @Test

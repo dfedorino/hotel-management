@@ -23,6 +23,7 @@ import ru.hotel.bookingservice.domain.User;
 import ru.hotel.bookingservice.exception.ConflictException;
 import ru.hotel.bookingservice.exception.NotFoundException;
 import ru.hotel.bookingservice.mapper.UserMapper;
+import ru.hotel.bookingservice.repository.BookingRepository;
 import ru.hotel.bookingservice.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,11 +35,15 @@ class UserServiceImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private BookingRepository bookingRepository;
+
     private UserServiceImpl userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserServiceImpl(userRepository, passwordEncoder, Mappers.getMapper(UserMapper.class));
+        userService = new UserServiceImpl(
+                userRepository, bookingRepository, passwordEncoder, Mappers.getMapper(UserMapper.class));
     }
 
     @Test
@@ -89,6 +94,19 @@ class UserServiceImplTest {
         // when / then
         assertThatThrownBy(() -> userService.update(3L, request)).isInstanceOf(ConflictException.class);
         assertThat(user.getUsername()).isEqualTo("bob");
+    }
+
+    @Test
+    void deleteRefusesUserWithBookings() {
+        // given
+        given(userRepository.existsById(3L)).willReturn(true);
+        given(bookingRepository.existsByUserId(3L)).willReturn(true);
+
+        // when / then
+        assertThatThrownBy(() -> userService.delete(3L))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("User 3 has bookings and cannot be deleted");
+        verify(userRepository, never()).deleteById(any());
     }
 
     @Test

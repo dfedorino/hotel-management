@@ -12,6 +12,7 @@ import ru.hotel.bookingservice.domain.User;
 import ru.hotel.bookingservice.exception.ConflictException;
 import ru.hotel.bookingservice.exception.NotFoundException;
 import ru.hotel.bookingservice.mapper.UserMapper;
+import ru.hotel.bookingservice.repository.BookingRepository;
 import ru.hotel.bookingservice.repository.UserRepository;
 
 @Service
@@ -19,6 +20,7 @@ import ru.hotel.bookingservice.repository.UserRepository;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
@@ -62,6 +64,10 @@ public class UserServiceImpl implements UserService {
     public void delete(Long id) {
         if (!userRepository.existsById(id)) {
             throw notFound(id);
+        }
+        // bookings keep the history of the stay, so their owner stays too
+        if (bookingRepository.existsByUserId(id)) {
+            throw new ConflictException("User " + id + " has bookings and cannot be deleted");
         }
         userRepository.deleteById(id);
     }
