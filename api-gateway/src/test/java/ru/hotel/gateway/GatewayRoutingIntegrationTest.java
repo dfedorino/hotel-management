@@ -4,43 +4,33 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
+@SpringBootTest
+@AutoConfigureMockMvc
 class GatewayRoutingIntegrationTest {
-
-    private static final String SECRET = "test-secret-test-secret-test-secret-0123";
-    private static final String FOREIGN_SECRET = "another-secret-another-secret-another-1234";
 
     @RegisterExtension
     static final WireMockExtension BOOKING = WireMockExtension.newInstance()
@@ -53,128 +43,93 @@ class GatewayRoutingIntegrationTest {
             .build();
 
     @Autowired
-    private WebTestClient client;
+    private MockMvc mockMvc;
 
     @DynamicPropertySource
     static void backends(DynamicPropertyRegistry registry) {
         registry.add("gateway.routes.booking-service-uri", BOOKING::baseUrl);
         registry.add("gateway.routes.hotel-service-uri", HOTEL::baseUrl);
-        registry.add("security.jwt.secret", () -> SECRET);
+        registry.add("security.jwt.secret", () -> GatewayTestTokens.SECRET);
     }
 
     @BeforeEach
     void backendsAnswer() {
-        BOOKING.stubFor(post(anyUrl()).willReturn(aResponse().withStatus(201)));
-        BOOKING.stubFor(get(anyUrl()).willReturn(aResponse().withStatus(200)));
-        HOTEL.stubFor(get(anyUrl()).willReturn(aResponse().withStatus(200)));
-        HOTEL.stubFor(post(anyUrl()).willReturn(aResponse().withStatus(200)));
+        BOOKING.stubFor(WireMock.post(anyUrl()).willReturn(aResponse().withStatus(201)));
+        BOOKING.stubFor(WireMock.get(anyUrl()).willReturn(aResponse().withStatus(200)));
+        HOTEL.stubFor(WireMock.get(anyUrl()).willReturn(aResponse().withStatus(200)));
+        HOTEL.stubFor(WireMock.post(anyUrl()).willReturn(aResponse().withStatus(200)));
     }
 
     @Test
-    void registrationIsPublicAndReachesBookingServiceWithoutPrefix() {
+    void registrationIsPublicAndReachesBookingServiceWithoutPrefix() throws Exception {
         // when / then
-        client.post()
-                .uri("/api/bookings/user/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("{}")
-                .exchange()
-                .expectStatus()
-                .isCreated();
+        mockMvc.perform(post("/api/bookings/user/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isCreated());
         BOOKING.verify(postRequestedFor(urlPathEqualTo("/user/register")));
     }
 
     @Test
-    void bookingPathsAreStrippedOfTheGatewayPrefix() {
+    void bookingPathsAreStrippedOfTheGatewayPrefixAndKeepTheToken() throws Exception {
         // given
-        String token = token(SECRET, Instant.now().plus(Duration.ofHours(1)));
+        String token = GatewayTestTokens.valid();
 
         // when / then
-        client.get()
-                .uri("/api/bookings/bookings?page=0")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .exchange()
-                .expectStatus()
-                .isOk();
+        mockMvc.perform(get("/api/bookings/bookings")
+                        .param("page", "0")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk());
         BOOKING.verify(getRequestedFor(urlPathEqualTo("/bookings"))
-                .withHeader(HttpHeaders.AUTHORIZATION, equalTo("Bearer " + token)));
+                .withQueryParam("page", equalTo("0"))
+                .withHeader(HttpHeaders.AUTHORIZATION, equalTo(bearer(token))));
     }
 
     @Test
-    void hotelAndRoomPathsReachHotelServiceUnchanged() {
+    void hotelAndRoomPathsReachHotelServiceUnchanged() throws Exception {
         // given
-        String token = token(SECRET, Instant.now().plus(Duration.ofHours(1)));
+        String token = GatewayTestTokens.valid();
 
         // when / then
         for (String path : List.of("/api/hotels", "/api/hotels/1", "/api/rooms", "/api/rooms/recommend")) {
-            client.get()
-                    .uri(path)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                    .exchange()
-                    .expectStatus()
-                    .isOk();
+            mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                    .andExpect(status().isOk());
             HOTEL.verify(getRequestedFor(urlPathEqualTo(path)));
         }
     }
 
     @Test
-    void internalSagaEndpointsAreNotPublished() {
+    void internalSagaEndpointsAreNotPublished() throws Exception {
         // given
-        String token = token(SECRET, Instant.now().plus(Duration.ofHours(1)));
+        String token = GatewayTestTokens.valid();
 
         // when / then
         for (String path : List.of("/api/rooms/5/confirm-availability", "/api/rooms/5/release")) {
-            client.post()
-                    .uri(path)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                    .exchange()
-                    .expectStatus()
-                    .isNotFound();
+            mockMvc.perform(post(path).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                    .andExpect(status().isNotFound());
         }
         HOTEL.verify(0, anyRequestedFor(anyUrl()));
     }
 
     @Test
-    void requestsWithoutValidTokenStopAtTheGateway() {
+    void requestsWithoutValidTokenStopAtTheGateway() throws Exception {
         // given
-        String foreign = token(FOREIGN_SECRET, Instant.now().plus(Duration.ofHours(1)));
-        String expired = token(SECRET, Instant.now().minus(Duration.ofMinutes(5)));
+        String foreign = GatewayTestTokens.signedWithForeignSecret();
+        String expired = GatewayTestTokens.expired();
 
         // when / then
-        client.get().uri("/api/hotels").exchange().expectStatus().isUnauthorized();
-        client.get()
-                .uri("/api/hotels")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + foreign)
-                .exchange()
-                .expectStatus()
-                .isUnauthorized()
-                .expectBody()
-                .jsonPath("$.status")
-                .isEqualTo(401)
-                .jsonPath("$.path")
-                .isEqualTo("/api/hotels");
-        client.get()
-                .uri("/api/bookings/bookings")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + expired)
-                .exchange()
-                .expectStatus()
-                .isUnauthorized();
+        mockMvc.perform(get("/api/hotels")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/hotels").header(HttpHeaders.AUTHORIZATION, bearer(foreign)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.path").value("/api/hotels"));
+        mockMvc.perform(get("/api/bookings/bookings").header(HttpHeaders.AUTHORIZATION, bearer(expired)))
+                .andExpect(status().isUnauthorized());
         HOTEL.verify(0, anyRequestedFor(anyUrl()));
         BOOKING.verify(0, anyRequestedFor(anyUrl()));
     }
 
-    private static String token(String secret, Instant expiresAt) {
-        JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                .subject("alice")
-                .claim("roles", List.of("USER"))
-                .issueTime(Date.from(expiresAt.minus(Duration.ofHours(1))))
-                .expirationTime(Date.from(expiresAt))
-                .build();
-        SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims);
-        try {
-            jwt.sign(new MACSigner(secret.getBytes(StandardCharsets.UTF_8)));
-        } catch (JOSEException ex) {
-            throw new IllegalStateException(ex);
-        }
-        return jwt.serialize();
+    private static String bearer(String token) {
+        return "Bearer " + token;
     }
 }

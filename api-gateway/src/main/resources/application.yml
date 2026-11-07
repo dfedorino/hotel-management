@@ -2,6 +2,11 @@ spring:
   application:
     name: api-gateway
 
+  # One virtual thread per proxied request: blocking calls to the services do not tie up platform threads.
+  threads:
+    virtual:
+      enabled: true
+
 server:
   port: ${PORT:8080}
 

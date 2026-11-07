@@ -1,9 +1,19 @@
 package ru.hotel.gateway;
 
-import org.springframework.cloud.gateway.route.RouteLocator;
-import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import static org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions.stripPrefix;
+import static org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions.uri;
+import static org.springframework.cloud.gateway.server.mvc.filter.LoadBalancerFilterFunctions.lb;
+import static org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions.route;
+import static org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions.http;
+import static org.springframework.cloud.gateway.server.mvc.predicate.GatewayRequestPredicates.path;
+
+import java.net.URI;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.function.RequestPredicate;
+import org.springframework.web.servlet.function.RouterFunction;
+import org.springframework.web.servlet.function.RouterFunctions;
+import org.springframework.web.servlet.function.ServerResponse;
 
 /**
  * Public routes. Booking Service paths are published under {@code /api/bookings} and reach the service without that
@@ -14,22 +24,37 @@ import org.springframework.context.annotation.Configuration;
 public class RoutesConfig {
 
     private static final int BOOKINGS_PREFIX_PARTS = 2;
+    private static final String LOAD_BALANCED = "lb";
 
     @Bean
-    public RouteLocator routes(RouteLocatorBuilder builder, RouteProperties properties) {
-        return builder.routes()
-                .route(
-                        "booking-service",
-                        route -> route.path("/api/bookings/**")
-                                .filters(filters -> filters.stripPrefix(BOOKINGS_PREFIX_PARTS))
-                                .uri(properties.bookingServiceUri()))
-                .route(
-                        "hotels",
-                        route -> route.path("/api/hotels", "/api/hotels/**").uri(properties.hotelServiceUri()))
-                .route(
-                        "rooms",
-                        route ->
-                                route.path("/api/rooms", "/api/rooms/{segment}").uri(properties.hotelServiceUri()))
+    public RouterFunction<ServerResponse> bookingRoutes(RouteProperties properties) {
+        RouterFunctions.Builder builder = route("booking-service")
+                .route(path("/api/bookings/**"), http())
+                .before(stripPrefix(BOOKINGS_PREFIX_PARTS));
+        return toBackend(builder, properties.bookingServiceUri()).build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> hotelRoutes(RouteProperties properties) {
+        return toBackend(proxy("hotels", path("/api/hotels", "/api/hotels/**")), properties.hotelServiceUri())
                 .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> roomRoutes(RouteProperties properties) {
+        return toBackend(proxy("rooms", path("/api/rooms", "/api/rooms/{segment}")), properties.hotelServiceUri())
+                .build();
+    }
+
+    private static RouterFunctions.Builder proxy(String id, RequestPredicate predicate) {
+        return route(id).route(predicate, http());
+    }
+
+    /** {@code lb://name} goes through Eureka and the load balancer; any other URI is called directly. */
+    private static RouterFunctions.Builder toBackend(RouterFunctions.Builder builder, String location) {
+        URI backend = URI.create(location);
+        return LOAD_BALANCED.equals(backend.getScheme())
+                ? builder.filter(lb(backend.getHost()))
+                : builder.before(uri(backend));
     }
 }
