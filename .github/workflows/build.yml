@@ -6,36 +6,37 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Builds only modules changed since the previous commit (push) or the base branch (PR), plus the modules
+# they depend on (-am) and those depending on them (-amd). Sonar runs separately on a full build (sonar.yml).
 # Actions are pinned to commit SHAs: tags can be moved, SHAs cannot.
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          # Sonar needs full history for blame and new-code detection.
           fetch-depth: 0
 
+      - name: Detect changed modules
+        id: changes
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          modules="$(bash .github/scripts/changed-modules.sh "$BASE" HEAD)"
+          echo "Modules to build: ${modules:-none}"
+          echo "modules=$modules" >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
+        if: steps.changes.outputs.modules != ''
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
 
-      - name: Build, test and run static checks
+      - name: Build, test and run static checks (all modules)
+        if: steps.changes.outputs.modules == 'ALL'
         run: ./mvnw -B verify
 
-      - name: Cache SonarCloud packages
-        if: env.SONAR_TOKEN != ''
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      # Skipped until the SONAR_TOKEN secret is set and for pull requests from forks.
-      - name: SonarCloud analysis
-        if: env.SONAR_TOKEN != ''
-        run: ./mvnw -B sonar:sonar
+      - name: Build, test and run static checks (changed modules)
+        if: steps.changes.outputs.modules != '' && steps.changes.outputs.modules != 'ALL'
+        run: ./mvnw -B -pl "${{ steps.changes.outputs.modules }}" -am -amd verify
