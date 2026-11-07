@@ -110,6 +110,22 @@ class AccessControlIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void internalServiceGetsRecommendationsForAutoSelection() throws Exception {
+        mockMvc.perform(withToken(get("/api/rooms/recommend"), JwtTokenFixtures.token("booking-service", "INTERNAL"))
+                        .param("startDate", "2027-01-10")
+                        .param("endDate", "2027-01-15"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void internalServiceCannotManageHotels() throws Exception {
+        mockMvc.perform(withToken(post("/api/hotels"), JwtTokenFixtures.token("booking-service", "INTERNAL"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(HOTEL_BODY))
+                .andExpect(status().isForbidden());
+    }
+
     private static MockHttpServletRequestBuilder withToken(MockHttpServletRequestBuilder request, String token) {
         return request.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }

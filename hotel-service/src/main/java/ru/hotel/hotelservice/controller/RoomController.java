@@ -30,7 +30,8 @@ public class RoomController implements RoomsApi {
     }
 
     @Override
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    // INTERNAL: Booking Service picks a room on behalf of the user when autoSelect is requested.
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'INTERNAL')")
     public List<RoomResponse> findRecommendedRooms(Long hotelId, LocalDate startDate, LocalDate endDate) {
         return roomService.findRecommended(new RoomSearch(hotelId, startDate, endDate));
     }
