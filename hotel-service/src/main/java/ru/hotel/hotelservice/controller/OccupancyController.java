@@ -2,6 +2,7 @@ package ru.hotel.hotelservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +16,7 @@ public class OccupancyController {
 
     private final OccupancyService occupancyService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/api/rooms/occupancy")
     public OccupancyReport report(@Valid @ModelAttribute OccupancyQuery query) {
         return occupancyService.report(query);

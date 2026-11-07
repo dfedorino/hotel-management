@@ -15,6 +15,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,9 +26,12 @@ import ru.hotel.hotelservice.dto.RoomSearch;
 import ru.hotel.hotelservice.exception.BadRequestException;
 import ru.hotel.hotelservice.exception.ConflictException;
 import ru.hotel.hotelservice.exception.NotFoundException;
+import ru.hotel.hotelservice.security.SecurityConfig;
 import ru.hotel.hotelservice.service.RoomService;
 
 @WebMvcTest(RoomController.class)
+@Import(SecurityConfig.class)
+@WithMockUser(roles = "ADMIN")
 class RoomControllerTest {
 
     private static final String VALID_BODY = """

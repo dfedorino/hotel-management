@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: hotel-service
+
+server:
+  port: 8081
+
+security:
+  jwt:
+    # Must match Booking Service; override with JWT_SECRET outside local development.
+    secret: ${JWT_SECRET:local-dev-secret-change-me-0123456789abcdef}

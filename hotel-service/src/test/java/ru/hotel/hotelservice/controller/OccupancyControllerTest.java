@@ -10,14 +10,19 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.hotel.hotelservice.dto.OccupancyQuery;
 import ru.hotel.hotelservice.dto.OccupancyReport;
 import ru.hotel.hotelservice.dto.RoomOccupancy;
+import ru.hotel.hotelservice.security.SecurityConfig;
 import ru.hotel.hotelservice.service.OccupancyService;
 
 @WebMvcTest(OccupancyController.class)
+@Import(SecurityConfig.class)
+@WithMockUser(roles = "ADMIN")
 class OccupancyControllerTest {
 
     @Autowired

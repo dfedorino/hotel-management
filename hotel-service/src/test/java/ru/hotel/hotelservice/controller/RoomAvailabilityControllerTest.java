@@ -12,6 +12,8 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -19,9 +21,12 @@ import ru.hotel.hotelservice.domain.ReservationStatus;
 import ru.hotel.hotelservice.dto.ReleaseRequest;
 import ru.hotel.hotelservice.dto.ReservationResponse;
 import ru.hotel.hotelservice.exception.ConflictException;
+import ru.hotel.hotelservice.security.SecurityConfig;
 import ru.hotel.hotelservice.service.RoomAvailabilityService;
 
 @WebMvcTest(RoomAvailabilityController.class)
+@Import(SecurityConfig.class)
+@WithMockUser(roles = "INTERNAL")
 class RoomAvailabilityControllerTest {
 
     private static final String CONFIRM_BODY = """

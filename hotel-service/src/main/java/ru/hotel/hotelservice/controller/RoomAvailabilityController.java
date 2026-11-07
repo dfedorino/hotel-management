@@ -3,6 +3,7 @@ package ru.hotel.hotelservice.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,11 +25,13 @@ public class RoomAvailabilityController {
 
     private final RoomAvailabilityService availabilityService;
 
+    @PreAuthorize("hasRole('INTERNAL')")
     @PostMapping("/confirm-availability")
     public ReservationResponse confirm(@PathVariable Long id, @Valid @RequestBody AvailabilityRequest request) {
         return availabilityService.confirm(id, request);
     }
 
+    @PreAuthorize("hasRole('INTERNAL')")
     @PostMapping("/release")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void release(@PathVariable Long id, @Valid @RequestBody ReleaseRequest request) {

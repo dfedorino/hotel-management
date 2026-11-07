@@ -16,15 +16,20 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.hotel.hotelservice.dto.HotelRequest;
 import ru.hotel.hotelservice.dto.HotelResponse;
 import ru.hotel.hotelservice.exception.NotFoundException;
+import ru.hotel.hotelservice.security.SecurityConfig;
 import ru.hotel.hotelservice.service.HotelService;
 
 @WebMvcTest(HotelController.class)
+@Import(SecurityConfig.class)
+@WithMockUser(roles = "ADMIN")
 class HotelControllerTest {
 
     private static final String VALID_BODY = """
