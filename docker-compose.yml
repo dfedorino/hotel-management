@@ -1,0 +1,86 @@
+# Whole system with one command: docker compose up --build
+# Start order: Eureka -> Hotel Service (once Eureka answers) -> Booking Service -> Gateway, each once the previous is healthy.
+# Clients use the gateway at http://localhost:8080; Swagger UI: http://localhost:8081 and :8082 /swagger-ui/index.html.
+
+x-service: &service
+  build:
+    context: .
+  restart: unless-stopped
+  environment:
+    EUREKA_URL: http://eureka-server:8761/eureka
+    # Same HS256 secret everywhere; set JWT_SECRET (>= 32 bytes) in the shell or an .env file outside local runs.
+    JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-0123456789abcdef}
+    DEMO_DATA: ${DEMO_DATA:-true}
+    API_DOCS_ENABLED: ${API_DOCS_ENABLED:-true}
+    # Discover newly started services within seconds instead of the 30 s / 35 s defaults.
+    EUREKA_CLIENT_REGISTRYFETCHINTERVALSECONDS: "5"
+    SPRING_CLOUD_LOADBALANCER_CACHE_TTL: 5s
+
+# The runtime image has no curl: health is probed with bash /dev/tcp.
+x-health: &health
+  interval: 5s
+  timeout: 3s
+  retries: 30
+  start_period: 20s
+
+services:
+  eureka-server:
+    <<: *service
+    build:
+      context: .
+      args:
+        MODULE: eureka-server
+    environment: {}
+    ports:
+      - "8761:8761"
+    healthcheck:
+      <<: *health
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8761 && printf 'GET /eureka/apps HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '200' <&3"]
+
+  hotel-service:
+    <<: *service
+    build:
+      context: .
+      args:
+        MODULE: hotel-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8081 && printf 'GET /actuator/health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"]
+
+  booking-service:
+    <<: *service
+    build:
+      context: .
+      args:
+        MODULE: booking-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      # Hotel Service is registered in Eureka by then, so the first booking finds it.
+      hotel-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8082 && printf 'GET /actuator/health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"]
+
+  api-gateway:
+    <<: *service
+    build:
+      context: .
+      args:
+        MODULE: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      hotel-service:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /actuator/health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"]
