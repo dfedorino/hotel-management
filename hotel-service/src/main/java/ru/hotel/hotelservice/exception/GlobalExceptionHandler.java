@@ -41,14 +41,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PessimisticLockingFailureException.class)
     public ResponseEntity<ErrorResponse> handleLockFailure(
             PessimisticLockingFailureException ex, HttpServletRequest request) {
-        log.warn("Lock not acquired on {}: {}", request.getRequestURI(), ex.getMostSpecificCause().getMessage());
+        log.warn(
+                "Lock not acquired on {}: {}",
+                request.getRequestURI(),
+                ex.getMostSpecificCause().getMessage());
         return build(HttpStatus.CONFLICT, "Resource is busy, retry later", request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrity(
             DataIntegrityViolationException ex, HttpServletRequest request) {
-        log.warn("Data integrity violation on {}: {}", request.getRequestURI(), ex.getMostSpecificCause().getMessage());
+        log.warn(
+                "Data integrity violation on {}: {}",
+                request.getRequestURI(),
+                ex.getMostSpecificCause().getMessage());
         return build(HttpStatus.CONFLICT, "Data integrity violation", request);
     }
 

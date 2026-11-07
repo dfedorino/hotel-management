@@ -32,8 +32,7 @@ class ApiDocumentationDisabledIntegrationTest {
     @ValueSource(strings = {"/openapi/hotel-service.yaml", "/swagger-ui/index.html", "/v3/api-docs/swagger-config"})
     void documentationDoesNotExistWhenSwitchedOff(String path) throws Exception {
         // when / then
-        mockMvc.perform(get(path)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + TestTokens.token("root", "ADMIN")))
+        mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + TestTokens.token("root", "ADMIN")))
                 .andExpect(status().isNotFound());
     }
 }

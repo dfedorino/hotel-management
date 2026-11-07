@@ -66,7 +66,8 @@ class AccessControlIntegrationTest {
     @Test
     void userCannotCreateHotel() throws Exception {
         mockMvc.perform(withToken(post("/api/hotels"), TestTokens.token("alice", "USER"))
-                        .contentType(MediaType.APPLICATION_JSON).content(HOTEL_BODY))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(HOTEL_BODY))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403));
     }
@@ -74,32 +75,38 @@ class AccessControlIntegrationTest {
     @Test
     void adminCanCreateHotel() throws Exception {
         mockMvc.perform(withToken(post("/api/hotels"), TestTokens.token("root", "ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON).content(HOTEL_BODY))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(HOTEL_BODY))
                 .andExpect(status().isCreated());
     }
 
     @Test
     void userCannotSeeOccupancy() throws Exception {
         mockMvc.perform(withToken(get("/api/rooms/occupancy"), TestTokens.token("alice", "USER"))
-                        .param("startDate", "2027-01-01").param("endDate", "2027-01-11"))
+                        .param("startDate", "2027-01-01")
+                        .param("endDate", "2027-01-11"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void userCannotCallInternalSagaEndpoints() throws Exception {
         mockMvc.perform(withToken(post("/api/rooms/1/confirm-availability"), TestTokens.token("alice", "USER"))
-                        .contentType(MediaType.APPLICATION_JSON).content(CONFIRM_BODY))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CONFIRM_BODY))
                 .andExpect(status().isForbidden());
         mockMvc.perform(withToken(post("/api/rooms/1/release"), TestTokens.token("root", "ADMIN"))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"requestId\": \"req-1\"}"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"requestId\": \"req-1\"}"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void internalServiceReachesSagaEndpoint() throws Exception {
-        mockMvc.perform(withToken(post("/api/rooms/999999/confirm-availability"),
-                        TestTokens.token("booking-service", "INTERNAL"))
-                        .contentType(MediaType.APPLICATION_JSON).content(CONFIRM_BODY))
+        mockMvc.perform(withToken(
+                                post("/api/rooms/999999/confirm-availability"),
+                                TestTokens.token("booking-service", "INTERNAL"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CONFIRM_BODY))
                 .andExpect(status().isNotFound());
     }
 

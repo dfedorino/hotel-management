@@ -90,8 +90,7 @@ class FreeRoomQueryTest {
         roomRepository.save(new Room(other, "201"));
 
         // when
-        List<Room> rooms = roomRepository.findFree(
-                hotel.getId(), START, END, Sort.by("timesBooked", "id"));
+        List<Room> rooms = roomRepository.findFree(hotel.getId(), START, END, Sort.by("timesBooked", "id"));
 
         // then
         assertThat(rooms).containsExactly(rareFirst, rareSecond, popular);

@@ -18,9 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * A slot of a room held for a booking over [startDate, endDate); endDate is the check-out day.
- */
+/** A slot of a room held for a booking over [startDate, endDate); endDate is the check-out day. */
 @Entity
 @Table(
         name = "room_reservations",

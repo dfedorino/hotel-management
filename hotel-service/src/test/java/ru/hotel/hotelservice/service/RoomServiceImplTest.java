@@ -17,10 +17,10 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
-import ru.hotel.hotelservice.domain.Hotel;
-import ru.hotel.hotelservice.domain.Room;
 import ru.hotel.hotelapi.model.RoomRequest;
 import ru.hotel.hotelapi.model.RoomResponse;
+import ru.hotel.hotelservice.domain.Hotel;
+import ru.hotel.hotelservice.domain.Room;
 import ru.hotel.hotelservice.dto.RoomSearch;
 import ru.hotel.hotelservice.exception.BadRequestException;
 import ru.hotel.hotelservice.exception.ConflictException;
@@ -125,7 +125,8 @@ class RoomServiceImplTest {
     @Test
     void findRecommendedSortsByTimesBookedThenId() {
         // given
-        given(roomRepository.findFree(null, START, END, Sort.by("timesBooked", "id"))).willReturn(List.of());
+        given(roomRepository.findFree(null, START, END, Sort.by("timesBooked", "id")))
+                .willReturn(List.of());
 
         // when
         roomService.findRecommended(new RoomSearch(null, START, END));

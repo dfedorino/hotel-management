@@ -14,9 +14,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.hotel.hotelservice.dto.OccupancyQuery;
 import ru.hotel.hotelapi.model.OccupancyReport;
 import ru.hotel.hotelapi.model.RoomOccupancy;
+import ru.hotel.hotelservice.dto.OccupancyQuery;
 import ru.hotel.hotelservice.security.SecurityConfig;
 import ru.hotel.hotelservice.service.OccupancyService;
 
@@ -36,8 +36,9 @@ class OccupancyControllerTest {
         // given
         LocalDate start = LocalDate.of(2027, 1, 1);
         LocalDate end = LocalDate.of(2027, 1, 11);
-        given(occupancyService.report(new OccupancyQuery(1L, start, end))).willReturn(new OccupancyReport(
-                start, end, 10L, 1, 0.5, List.of(new RoomOccupancy(10L, 1L, "101", 2, 5L, 0.5))));
+        given(occupancyService.report(new OccupancyQuery(1L, start, end)))
+                .willReturn(new OccupancyReport(
+                        start, end, 10L, 1, 0.5, List.of(new RoomOccupancy(10L, 1L, "101", 2, 5L, 0.5))));
 
         // when / then
         mockMvc.perform(get("/api/rooms/occupancy")
@@ -56,5 +57,4 @@ class OccupancyControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("startDate")));
     }
-
 }

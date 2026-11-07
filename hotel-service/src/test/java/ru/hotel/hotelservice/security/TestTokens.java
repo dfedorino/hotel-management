@@ -12,15 +12,12 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Issues HS256 tokens the way Booking Service does, for security tests.
- */
+/** Issues HS256 tokens the way Booking Service does, for security tests. */
 public final class TestTokens {
 
     public static final String SECRET = "test-secret-test-secret-test-secret-0123";
 
-    private TestTokens() {
-    }
+    private TestTokens() {}
 
     public static String token(String subject, String role) {
         return sign(SECRET, subject, role, Instant.now().plus(Duration.ofHours(1)));
@@ -31,7 +28,10 @@ public final class TestTokens {
     }
 
     public static String foreignToken(String role) {
-        return sign("another-secret-another-secret-another-1234", "intruder", role,
+        return sign(
+                "another-secret-another-secret-another-1234",
+                "intruder",
+                role,
                 Instant.now().plus(Duration.ofHours(1)));
     }
 

@@ -47,13 +47,18 @@ class DemoDataInitializerTest {
         initializer.run(null);
 
         // then
-        assertThat(hotelRepository.findAll()).extracting(Hotel::getName)
+        assertThat(hotelRepository.findAll())
+                .extracting(Hotel::getName)
                 .containsExactlyInAnyOrder("Grand Plaza", "Seaside Resort");
         List<Room> rooms = roomRepository.findAll();
         assertThat(rooms).hasSize(8);
-        assertThat(rooms).filteredOn(room -> !room.isAvailable()).extracting(Room::getNumber).containsExactly("105");
+        assertThat(rooms)
+                .filteredOn(room -> !room.isAvailable())
+                .extracting(Room::getNumber)
+                .containsExactly("105");
         List<RoomReservation> reservations = reservationRepository.findAll();
-        assertThat(reservations).isNotEmpty()
+        assertThat(reservations)
+                .isNotEmpty()
                 .allMatch(r -> r.getStatus() == ReservationStatus.ACTIVE)
                 .allMatch(r -> r.getStartDate().isAfter(TODAY));
     }

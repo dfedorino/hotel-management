@@ -14,28 +14,26 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import ru.hotel.hotelapi.model.ErrorResponse;
 
-/**
- * Writes 401/403 from the security filter chain in the same format as controller errors.
- */
+/** Writes 401/403 from the security filter chain in the same format as controller errors. */
 @RequiredArgsConstructor
 public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
 
     private final ObjectMapper objectMapper;
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException ex) throws IOException {
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException ex)
+            throws IOException {
         write(response, request, HttpStatus.UNAUTHORIZED, "Authentication required");
     }
 
     @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response,
-            AccessDeniedException ex) throws IOException {
+    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException ex)
+            throws IOException {
         write(response, request, HttpStatus.FORBIDDEN, "Access denied");
     }
 
-    private void write(HttpServletResponse response, HttpServletRequest request, HttpStatus status,
-            String message) throws IOException {
+    private void write(HttpServletResponse response, HttpServletRequest request, HttpStatus status, String message)
+            throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         ErrorResponse body = new ErrorResponse(

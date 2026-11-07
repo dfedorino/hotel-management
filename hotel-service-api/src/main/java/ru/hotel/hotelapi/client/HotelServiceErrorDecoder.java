@@ -14,8 +14,8 @@ import ru.hotel.hotelapi.error.HotelServiceNotFoundException;
 import ru.hotel.hotelapi.model.ErrorResponse;
 
 /**
- * Maps rejected requests (400, 404, 409) to typed exceptions; anything else, including 5xx, is left to
- * Feign's default decoder so that callers can treat it as a transient failure.
+ * Maps rejected requests (400, 404, 409) to typed exceptions; anything else, including 5xx, is left to Feign's default
+ * decoder so that callers can treat it as a transient failure.
  */
 public class HotelServiceErrorDecoder implements ErrorDecoder {
 
@@ -42,7 +42,11 @@ public class HotelServiceErrorDecoder implements ErrorDecoder {
                 // not an ErrorResponse (e.g. a proxy page): describe the status instead
             }
         }
-        return new ErrorResponse(OffsetDateTime.now(), response.status(), response.reason(),
-                "Hotel Service responded with status " + response.status(), response.request().url());
+        return new ErrorResponse(
+                OffsetDateTime.now(),
+                response.status(),
+                response.reason(),
+                "Hotel Service responded with status " + response.status(),
+                response.request().url());
     }
 }

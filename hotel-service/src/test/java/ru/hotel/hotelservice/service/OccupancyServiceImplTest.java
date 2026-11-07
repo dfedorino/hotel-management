@@ -12,13 +12,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
+import ru.hotel.hotelapi.model.OccupancyReport;
+import ru.hotel.hotelapi.model.RoomOccupancy;
 import ru.hotel.hotelservice.domain.Hotel;
 import ru.hotel.hotelservice.domain.Room;
 import ru.hotel.hotelservice.domain.RoomReservation;
 import ru.hotel.hotelservice.dto.OccupancyQuery;
 import ru.hotel.hotelservice.exception.BadRequestException;
-import ru.hotel.hotelapi.model.OccupancyReport;
-import ru.hotel.hotelapi.model.RoomOccupancy;
 import ru.hotel.hotelservice.repository.RoomRepository;
 import ru.hotel.hotelservice.repository.RoomReservationRepository;
 
@@ -52,9 +52,10 @@ class OccupancyServiceImplTest {
     void countsOnlyNightsInsideThePeriod() {
         // given: one stay fully inside (3 nights), one crossing the period start (2 nights inside)
         given(roomRepository.findAllInHotel(1L, Sort.by("id"))).willReturn(List.of(busy, idle));
-        given(reservationRepository.findActiveOverlapping(1L, START, END)).willReturn(List.of(
-                reservation(busy, LocalDate.of(2027, 1, 5), LocalDate.of(2027, 1, 8)),
-                reservation(busy, LocalDate.of(2026, 12, 28), LocalDate.of(2027, 1, 3))));
+        given(reservationRepository.findActiveOverlapping(1L, START, END))
+                .willReturn(List.of(
+                        reservation(busy, LocalDate.of(2027, 1, 5), LocalDate.of(2027, 1, 8)),
+                        reservation(busy, LocalDate.of(2026, 12, 28), LocalDate.of(2027, 1, 3))));
 
         // when
         OccupancyReport report = occupancyService.report(new OccupancyQuery(1L, START, END));
@@ -62,9 +63,9 @@ class OccupancyServiceImplTest {
         // then
         assertThat(report.getPeriodNights()).isEqualTo(10L);
         assertThat(report.getTotalRooms()).isEqualTo(2);
-        assertThat(report.getRooms()).containsExactly(
-                new RoomOccupancy(10L, 1L, "101", 2, 5L, 0.5),
-                new RoomOccupancy(11L, 1L, "102", 0, 0L, 0.0));
+        assertThat(report.getRooms())
+                .containsExactly(
+                        new RoomOccupancy(10L, 1L, "101", 2, 5L, 0.5), new RoomOccupancy(11L, 1L, "102", 0, 0L, 0.0));
         assertThat(report.getAverageOccupancy()).isEqualTo(0.25);
     }
 

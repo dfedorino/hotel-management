@@ -37,15 +37,13 @@ class ApiDocumentationIntegrationTest {
         mockMvc.perform(get("/v3/api-docs/swagger-config"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.url").value("/openapi/hotel-service.yaml"));
-        mockMvc.perform(get("/swagger-ui/index.html"))
-                .andExpect(status().isOk());
+        mockMvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
     }
 
     @Test
     void specDerivedFromCodeIsNotPublished() throws Exception {
         // when / then
-        mockMvc.perform(get("/v3/api-docs"))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/v3/api-docs")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/v3/api-docs")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + TestTokens.token("root", "ADMIN")))
                 .andExpect(status().isForbidden());

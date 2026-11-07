@@ -17,9 +17,9 @@ import ru.hotel.hotelservice.repository.RoomRepository;
 import ru.hotel.hotelservice.repository.RoomReservationRepository;
 
 /**
- * Loads demo hotels on an empty database: uneven times_booked shows the recommendation order,
- * room 105 is out of service, and upcoming reservations (matching Booking Service demo bookings
- * 1..3 by bookingId and requestId) hide rooms from free search and fill the occupancy report.
+ * Loads demo hotels on an empty database: uneven times_booked shows the recommendation order, room 105 is out of
+ * service, and upcoming reservations (matching Booking Service demo bookings 1..3 by bookingId and requestId) hide
+ * rooms from free search and fill the occupancy report.
  */
 @Slf4j
 @Component
@@ -56,8 +56,11 @@ public class DemoDataInitializer implements ApplicationRunner {
         reserve(room101, 1L, today.plusDays(7), today.plusDays(10));
         reserve(room201, 2L, today.plusDays(3), today.plusDays(5));
         reserve(room102, 3L, today.plusDays(14), today.plusDays(21));
-        log.info("Demo data loaded: {} hotels, {} rooms, {} reservations",
-                hotelRepository.count(), roomRepository.count(), reservationRepository.count());
+        log.info(
+                "Demo data loaded: {} hotels, {} rooms, {} reservations",
+                hotelRepository.count(),
+                roomRepository.count(),
+                reservationRepository.count());
     }
 
     private Room room(Hotel hotel, String number, int timesBooked, boolean available) {

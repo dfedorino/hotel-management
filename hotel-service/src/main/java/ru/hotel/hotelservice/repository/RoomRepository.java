@@ -15,9 +15,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     List<Room> findByHotelId(Long hotelId);
 
-    /**
-     * Loads the room with a row lock so that slot changes of one room are serialized.
-     */
+    /** Loads the room with a row lock so that slot changes of one room are serialized. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Room r where r.id = :id")
     Optional<Room> findByIdForUpdate(@Param("id") Long id);
@@ -31,9 +29,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @Query("select r from Room r where :hotelId is null or r.hotel.id = :hotelId")
     List<Room> findAllInHotel(@Param("hotelId") Long hotelId, Sort sort);
 
-    /**
-     * Rooms in service, optionally of one hotel.
-     */
+    /** Rooms in service, optionally of one hotel. */
     @Query("""
             select r from Room r
             where r.available = true
@@ -41,9 +37,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             """)
     List<Room> findAvailable(@Param("hotelId") Long hotelId, Sort sort);
 
-    /**
-     * Rooms in service with no active reservation overlapping [start, end).
-     */
+    /** Rooms in service with no active reservation overlapping [start, end). */
     @Query("""
             select r from Room r
             where r.available = true
@@ -56,8 +50,5 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
                     and rr.endDate > :start)
             """)
     List<Room> findFree(
-            @Param("hotelId") Long hotelId,
-            @Param("start") LocalDate start,
-            @Param("end") LocalDate end,
-            Sort sort);
+            @Param("hotelId") Long hotelId, @Param("start") LocalDate start, @Param("end") LocalDate end, Sort sort);
 }

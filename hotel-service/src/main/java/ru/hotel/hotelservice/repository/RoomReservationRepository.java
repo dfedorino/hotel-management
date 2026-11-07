@@ -21,9 +21,7 @@ public interface RoomReservationRepository extends JpaRepository<RoomReservation
               and rr.endDate > :start
             """)
     List<RoomReservation> findActiveOverlapping(
-            @Param("hotelId") Long hotelId,
-            @Param("start") LocalDate start,
-            @Param("end") LocalDate end);
+            @Param("hotelId") Long hotelId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
     @Query("""
             select count(rr) > 0 from RoomReservation rr
@@ -33,7 +31,5 @@ public interface RoomReservationRepository extends JpaRepository<RoomReservation
               and rr.endDate > :start
             """)
     boolean existsActiveOverlapping(
-            @Param("roomId") Long roomId,
-            @Param("start") LocalDate start,
-            @Param("end") LocalDate end);
+            @Param("roomId") Long roomId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 }

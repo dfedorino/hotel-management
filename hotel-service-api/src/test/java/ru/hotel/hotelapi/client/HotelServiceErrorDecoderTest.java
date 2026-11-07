@@ -28,7 +28,8 @@ class HotelServiceErrorDecoderTest {
         Exception exception = decoder.decode(METHOD_KEY, response);
 
         // then
-        assertThat(exception).isInstanceOf(HotelServiceConflictException.class)
+        assertThat(exception)
+                .isInstanceOf(HotelServiceConflictException.class)
                 .hasMessage("Room 5 is not available from 2027-01-10 to 2027-01-15");
         assertThat(((HotelServiceClientException) exception).getError().getPath())
                 .isEqualTo("/api/rooms/5/confirm-availability");
@@ -51,8 +52,7 @@ class HotelServiceErrorDecoderTest {
         Exception exception = decoder.decode(METHOD_KEY, response(409, "<html>oops</html>"));
 
         // then
-        assertThat(exception).isInstanceOf(HotelServiceConflictException.class)
-                .hasMessageContaining("409");
+        assertThat(exception).isInstanceOf(HotelServiceConflictException.class).hasMessageContaining("409");
         assertThat(((HotelServiceClientException) exception).getStatus()).isEqualTo(409);
     }
 
@@ -62,8 +62,7 @@ class HotelServiceErrorDecoderTest {
         Exception exception = decoder.decode(METHOD_KEY, response(503, errorBody(503, "down")));
 
         // then
-        assertThat(exception).isInstanceOf(FeignException.class)
-                .isNotInstanceOf(HotelServiceClientException.class);
+        assertThat(exception).isInstanceOf(FeignException.class).isNotInstanceOf(HotelServiceClientException.class);
         assertThat(((FeignException) exception).status()).isEqualTo(503);
     }
 
@@ -75,8 +74,13 @@ class HotelServiceErrorDecoderTest {
     }
 
     private static Response response(int status, String body) {
-        Request request = Request.create(Request.HttpMethod.POST, "http://hotel-service/api/rooms/5/confirm-availability",
-                Map.of(), null, StandardCharsets.UTF_8, null);
+        Request request = Request.create(
+                Request.HttpMethod.POST,
+                "http://hotel-service/api/rooms/5/confirm-availability",
+                Map.of(),
+                null,
+                StandardCharsets.UTF_8,
+                null);
         return Response.builder()
                 .status(status)
                 .reason("reason")

@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.hotel.hotelapi.model.HotelRequest;
@@ -48,7 +48,9 @@ class HotelControllerTest {
         given(hotelService.create(any())).willReturn(new HotelResponse(1L, "Grand", "Main st. 1"));
 
         // when / then
-        mockMvc.perform(post("/api/hotels").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+        mockMvc.perform(post("/api/hotels")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Grand"));
@@ -62,7 +64,9 @@ class HotelControllerTest {
                 """;
 
         // when / then
-        mockMvc.perform(post("/api/hotels").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/api/hotels")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.path").value("/api/hotels"))
@@ -72,9 +76,9 @@ class HotelControllerTest {
     @Test
     void listReturnsAllHotels() throws Exception {
         // given
-        given(hotelService.findAll()).willReturn(List.of(
-                new HotelResponse(1L, "Grand", "Main st. 1"),
-                new HotelResponse(2L, "Plaza", "Second st. 2")));
+        given(hotelService.findAll())
+                .willReturn(List.of(
+                        new HotelResponse(1L, "Grand", "Main st. 1"), new HotelResponse(2L, "Plaza", "Second st. 2")));
 
         // when / then
         mockMvc.perform(get("/api/hotels"))
@@ -101,7 +105,9 @@ class HotelControllerTest {
         given(hotelService.update(eq(1L), any())).willReturn(new HotelResponse(1L, "Grand", "Main st. 1"));
 
         // when / then
-        mockMvc.perform(put("/api/hotels/1").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+        mockMvc.perform(put("/api/hotels/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.address").value("Main st. 1"));
         verify(hotelService).update(1L, new HotelRequest("Grand", "Main st. 1"));
@@ -117,7 +123,9 @@ class HotelControllerTest {
     @Test
     void deleteReturns404WhenHotelIsMissing() throws Exception {
         // given
-        willThrow(new NotFoundException("Hotel 42 not found")).given(hotelService).delete(42L);
+        willThrow(new NotFoundException("Hotel 42 not found"))
+                .given(hotelService)
+                .delete(42L);
 
         // when / then
         mockMvc.perform(delete("/api/hotels/42")).andExpect(status().isNotFound());

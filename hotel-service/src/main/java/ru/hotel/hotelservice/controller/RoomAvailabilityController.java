@@ -10,9 +10,7 @@ import ru.hotel.hotelapi.model.ReleaseRequest;
 import ru.hotel.hotelapi.model.ReservationResponse;
 import ru.hotel.hotelservice.service.RoomAvailabilityService;
 
-/**
- * Internal saga endpoints called by Booking Service; not exposed through the gateway.
- */
+/** Internal saga endpoints called by Booking Service; not exposed through the gateway. */
 @RestController
 @RequiredArgsConstructor
 public class RoomAvailabilityController implements RoomAvailabilityApi {

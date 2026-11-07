@@ -19,8 +19,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Stateless resource server: every request carries an HS256 JWT issued by Booking Service.
- * Endpoint-level role checks live in {@code @PreAuthorize} on controllers.
+ * Stateless resource server: every request carries an HS256 JWT issued by Booking Service. Endpoint-level role checks
+ * live in {@code @PreAuthorize} on controllers.
  */
 @Configuration
 // Class proxies keep @RestController visible on controllers that implement generated API interfaces.
@@ -30,23 +30,20 @@ public class SecurityConfig {
 
     private static final String HEALTH_PATH = "/actuator/health";
 
-    /**
-     * Exactly what Swagger UI needs: the contract file, the UI assets and the UI config.
-     */
+    /** Exactly what Swagger UI needs: the contract file, the UI assets and the UI config. */
     private static final String[] API_DOCS_PATHS = {
         "/openapi/hotel-service.yaml", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/swagger-config"
     };
 
-    /**
-     * Spec that springdoc derives from code; the contract file is published instead.
-     */
+    /** Spec that springdoc derives from code; the contract file is published instead. */
     private static final String[] GENERATED_SPEC_PATHS = {"/v3/api-docs", "/v3/api-docs/**"};
 
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             SecurityErrorHandler errorHandler,
-            @Value("${hotel.api-docs.enabled}") boolean apiDocsEnabled) throws Exception {
+            @Value("${hotel.api-docs.enabled}") boolean apiDocsEnabled)
+            throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
@@ -57,20 +54,21 @@ public class SecurityConfig {
                     }
                     auth.anyRequest().authenticated();
                 })
-                .oauth2ResourceServer(oauth -> oauth
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                        .authenticationEntryPoint(errorHandler)
-                        .accessDeniedHandler(errorHandler))
-                .exceptionHandling(errors -> errors
-                        .authenticationEntryPoint(errorHandler)
-                        .accessDeniedHandler(errorHandler));
+                .oauth2ResourceServer(
+                        oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                                .authenticationEntryPoint(errorHandler)
+                                .accessDeniedHandler(errorHandler))
+                .exceptionHandling(
+                        errors -> errors.authenticationEntryPoint(errorHandler).accessDeniedHandler(errorHandler));
         return http.build();
     }
 
     @Bean
     public JwtDecoder jwtDecoder(JwtProperties properties) {
         SecretKeySpec key = new SecretKeySpec(properties.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
+        return NimbusJwtDecoder.withSecretKey(key)
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
     }
 
     @Bean

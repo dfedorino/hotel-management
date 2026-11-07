@@ -16,12 +16,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.hotel.hotelservice.domain.Hotel;
-import ru.hotel.hotelservice.domain.ReservationStatus;
-import ru.hotel.hotelservice.domain.Room;
 import ru.hotel.hotelapi.model.AvailabilityRequest;
 import ru.hotel.hotelapi.model.ReleaseRequest;
 import ru.hotel.hotelapi.model.ReservationResponse;
+import ru.hotel.hotelservice.domain.Hotel;
+import ru.hotel.hotelservice.domain.ReservationStatus;
+import ru.hotel.hotelservice.domain.Room;
 import ru.hotel.hotelservice.exception.BadRequestException;
 import ru.hotel.hotelservice.exception.ConflictException;
 import ru.hotel.hotelservice.exception.NotFoundException;
@@ -94,7 +94,7 @@ class RoomAvailabilityServiceIntegrationTest {
 
         // when / then
         assertThatThrownBy(() -> availabilityService.confirm(
-                room.getId(), request("req-1", START.plusDays(10), END.plusDays(10))))
+                        room.getId(), request("req-1", START.plusDays(10), END.plusDays(10))))
                 .isInstanceOf(ConflictException.class);
     }
 
@@ -104,8 +104,8 @@ class RoomAvailabilityServiceIntegrationTest {
         availabilityService.confirm(room.getId(), request("req-1", START, END));
 
         // when / then
-        assertThatThrownBy(() -> availabilityService.confirm(
-                room.getId(), request("req-2", START.plusDays(1), END.plusDays(1))))
+        assertThatThrownBy(() ->
+                        availabilityService.confirm(room.getId(), request("req-2", START.plusDays(1), END.plusDays(1))))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("not available");
         assertThat(timesBooked()).isEqualTo(1);

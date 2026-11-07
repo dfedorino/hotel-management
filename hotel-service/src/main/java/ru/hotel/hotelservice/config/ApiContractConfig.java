@@ -6,8 +6,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Serves the OpenAPI contract from hotel-service-api so Swagger UI shows the source spec, not one
- * re-derived from code.
+ * Serves the OpenAPI contract from hotel-service-api so Swagger UI shows the source spec, not one re-derived from code.
  */
 @Configuration
 @ConditionalOnProperty(name = "hotel.api-docs.enabled", havingValue = "true")

@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.hotel.hotelapi.model.RoomRequest;
@@ -50,7 +50,9 @@ class RoomControllerTest {
         given(roomService.create(any())).willReturn(new RoomResponse(5L, 1L, "101", true, 0));
 
         // when / then
-        mockMvc.perform(post("/api/rooms").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+        mockMvc.perform(post("/api/rooms")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(5))
                 .andExpect(jsonPath("$.hotelId").value(1))
@@ -65,7 +67,9 @@ class RoomControllerTest {
                 """;
 
         // when / then
-        mockMvc.perform(post("/api/rooms").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/api/rooms")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("hotelId")));
     }
@@ -76,7 +80,9 @@ class RoomControllerTest {
         given(roomService.create(any())).willThrow(new ConflictException("Room 101 already exists in hotel 1"));
 
         // when / then
-        mockMvc.perform(post("/api/rooms").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+        mockMvc.perform(post("/api/rooms")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("Room 101 already exists in hotel 1"));
@@ -98,7 +104,8 @@ class RoomControllerTest {
         given(roomService.update(5L, request)).willReturn(new RoomResponse(5L, 1L, "101", false, 3));
 
         // when / then
-        mockMvc.perform(put("/api/rooms/5").contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(put("/api/rooms/5")
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"hotelId": 1, "number": "101", "available": false}
                                 """))
@@ -125,9 +132,9 @@ class RoomControllerTest {
     void recommendReturnsRoomsInServiceOrder() throws Exception {
         // given
         RoomSearch search = new RoomSearch(null, LocalDate.of(2027, 1, 10), LocalDate.of(2027, 1, 15));
-        given(roomService.findRecommended(search)).willReturn(List.of(
-                new RoomResponse(6L, 1L, "102", true, 0),
-                new RoomResponse(5L, 1L, "101", true, 2)));
+        given(roomService.findRecommended(search))
+                .willReturn(
+                        List.of(new RoomResponse(6L, 1L, "102", true, 0), new RoomResponse(5L, 1L, "101", true, 2)));
 
         // when / then
         mockMvc.perform(get("/api/rooms/recommend")

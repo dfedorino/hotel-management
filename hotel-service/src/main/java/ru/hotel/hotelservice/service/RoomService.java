@@ -7,14 +7,10 @@ import ru.hotel.hotelservice.dto.RoomSearch;
 
 public interface RoomService {
 
-    /**
-     * Free rooms without special ordering (by id).
-     */
+    /** Free rooms without special ordering (by id). */
     List<RoomResponse> findFree(RoomSearch search);
 
-    /**
-     * Free rooms, least booked first, ties broken by id, to spread load evenly.
-     */
+    /** Free rooms, least booked first, ties broken by id, to spread load evenly. */
     List<RoomResponse> findRecommended(RoomSearch search);
 
     RoomResponse create(RoomRequest request);

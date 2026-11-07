@@ -3,9 +3,9 @@ package ru.hotel.hotelservice.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import ru.hotel.hotelservice.domain.Hotel;
 import ru.hotel.hotelapi.model.HotelRequest;
 import ru.hotel.hotelapi.model.HotelResponse;
+import ru.hotel.hotelservice.domain.Hotel;
 
 @Mapper
 public interface HotelMapper {

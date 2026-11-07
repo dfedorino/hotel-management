@@ -6,12 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.hotel.hotelservice.domain.ReservationStatus;
-import ru.hotel.hotelservice.domain.Room;
-import ru.hotel.hotelservice.domain.RoomReservation;
 import ru.hotel.hotelapi.model.AvailabilityRequest;
 import ru.hotel.hotelapi.model.ReleaseRequest;
 import ru.hotel.hotelapi.model.ReservationResponse;
+import ru.hotel.hotelservice.domain.ReservationStatus;
+import ru.hotel.hotelservice.domain.Room;
+import ru.hotel.hotelservice.domain.RoomReservation;
 import ru.hotel.hotelservice.exception.ConflictException;
 import ru.hotel.hotelservice.exception.NotFoundException;
 import ru.hotel.hotelservice.mapper.ReservationMapper;
@@ -40,16 +40,24 @@ public class RoomAvailabilityServiceImpl implements RoomAvailabilityService {
             throw new ConflictException("Room " + roomId + " is out of service");
         }
         if (reservationRepository.existsActiveOverlapping(roomId, request.getStartDate(), request.getEndDate())) {
-            log.info("bookingId={} requestId={} roomId={} slot rejected: dates overlap",
-                    request.getBookingId(), request.getRequestId(), roomId);
-            throw new ConflictException("Room " + roomId + " is not available from "
-                    + request.getStartDate() + " to " + request.getEndDate());
+            log.info(
+                    "bookingId={} requestId={} roomId={} slot rejected: dates overlap",
+                    request.getBookingId(),
+                    request.getRequestId(),
+                    roomId);
+            throw new ConflictException("Room " + roomId + " is not available from " + request.getStartDate() + " to "
+                    + request.getEndDate());
         }
         RoomReservation reservation = reservationRepository.save(new RoomReservation(
                 room, request.getBookingId(), request.getRequestId(), request.getStartDate(), request.getEndDate()));
         room.setTimesBooked(room.getTimesBooked() + 1);
-        log.info("bookingId={} requestId={} roomId={} slot locked {}..{}",
-                request.getBookingId(), request.getRequestId(), roomId, request.getStartDate(), request.getEndDate());
+        log.info(
+                "bookingId={} requestId={} roomId={} slot locked {}..{}",
+                request.getBookingId(),
+                request.getRequestId(),
+                roomId,
+                request.getStartDate(),
+                request.getEndDate());
         return reservationMapper.toResponse(reservation);
     }
 
@@ -67,14 +75,20 @@ public class RoomAvailabilityServiceImpl implements RoomAvailabilityService {
             throw new ConflictException("Request " + request.getRequestId() + " does not belong to room " + roomId);
         }
         if (reservation.getStatus() == ReservationStatus.RELEASED) {
-            log.info("bookingId={} requestId={} roomId={} release skipped: already released",
-                    reservation.getBookingId(), request.getRequestId(), roomId);
+            log.info(
+                    "bookingId={} requestId={} roomId={} release skipped: already released",
+                    reservation.getBookingId(),
+                    request.getRequestId(),
+                    roomId);
             return;
         }
         reservation.setStatus(ReservationStatus.RELEASED);
         room.setTimesBooked(Math.max(0, room.getTimesBooked() - 1));
-        log.info("bookingId={} requestId={} roomId={} slot released",
-                reservation.getBookingId(), request.getRequestId(), roomId);
+        log.info(
+                "bookingId={} requestId={} roomId={} slot released",
+                reservation.getBookingId(),
+                request.getRequestId(),
+                roomId);
     }
 
     private ReservationResponse replay(RoomReservation reservation, Long roomId, AvailabilityRequest request) {
@@ -83,15 +97,20 @@ public class RoomAvailabilityServiceImpl implements RoomAvailabilityService {
                 && reservation.getStartDate().equals(request.getStartDate())
                 && reservation.getEndDate().equals(request.getEndDate());
         if (!sameRequest) {
-            throw new ConflictException("Request " + request.getRequestId() + " was already used with other parameters");
+            throw new ConflictException(
+                    "Request " + request.getRequestId() + " was already used with other parameters");
         }
-        log.info("bookingId={} requestId={} roomId={} duplicate confirm, returning stored result",
-                request.getBookingId(), request.getRequestId(), roomId);
+        log.info(
+                "bookingId={} requestId={} roomId={} duplicate confirm, returning stored result",
+                request.getBookingId(),
+                request.getRequestId(),
+                roomId);
         return reservationMapper.toResponse(reservation);
     }
 
     private Room lockRoom(Long roomId) {
-        return roomRepository.findByIdForUpdate(roomId)
+        return roomRepository
+                .findByIdForUpdate(roomId)
                 .orElseThrow(() -> new NotFoundException("Room " + roomId + " not found"));
     }
 }

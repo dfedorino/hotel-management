@@ -3,9 +3,7 @@ package ru.hotel.hotelapi.error;
 import lombok.Getter;
 import ru.hotel.hotelapi.model.ErrorResponse;
 
-/**
- * A 4xx answer of Hotel Service: the request was understood and rejected, so retrying will not help.
- */
+/** A 4xx answer of Hotel Service: the request was understood and rejected, so retrying will not help. */
 @Getter
 public abstract class HotelServiceClientException extends RuntimeException {
 
