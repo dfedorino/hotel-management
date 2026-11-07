@@ -110,6 +110,25 @@ class FreeRoomQueryTest {
         assertThat(rooms).containsExactly(reserved);
     }
 
+    @Test
+    void findActiveOverlappingReturnsOnlyActiveReservationsOfHotelInPeriod() {
+        // given
+        Hotel other = hotelRepository.save(new Hotel("Plaza", "Second st. 2"));
+        Room mine = roomRepository.save(new Room(hotel, "101"));
+        Room foreign = roomRepository.save(new Room(other, "201"));
+        reserve(mine, START.minusDays(2), START.plusDays(1), ReservationStatus.ACTIVE);
+        reservationRepository.save(new RoomReservation(mine, 2L, "released", START, END));
+        reservationRepository.findByRequestId("released").orElseThrow().setStatus(ReservationStatus.RELEASED);
+        reservationRepository.save(new RoomReservation(mine, 3L, "later", END, END.plusDays(1)));
+        reserve(foreign, START, END, ReservationStatus.ACTIVE);
+
+        // when
+        List<RoomReservation> found = reservationRepository.findActiveOverlapping(hotel.getId(), START, END);
+
+        // then
+        assertThat(found).extracting(RoomReservation::getRequestId).containsExactly("req-101");
+    }
+
     private Room roomBooked(String number, int timesBooked) {
         Room room = new Room(hotel, number);
         room.setTimesBooked(timesBooked);

@@ -28,6 +28,9 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     boolean existsByHotelIdAndNumberAndIdNot(Long hotelId, String number, Long id);
 
+    @Query("select r from Room r where :hotelId is null or r.hotel.id = :hotelId")
+    List<Room> findAllInHotel(@Param("hotelId") Long hotelId, Sort sort);
+
     /**
      * Rooms in service, optionally of one hotel.
      */
