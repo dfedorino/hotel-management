@@ -57,3 +57,14 @@ PIT вносит небольшие изменения в код («мутант
 Пока по умолчанию: оставил как есть; в `booking-service` доменные ошибки сведены к одному `ApiException` со статусом.
 
 **Ответ:** оставить как есть.
+
+## 7. Маршруты Gateway
+В ТЗ у Gateway два маршрута: `/api/bookings/** → Booking Service` и `/api/hotels/** → Hotel Service`, но эндпойнты сервисов — `/user/...`, `/booking`, `/bookings` и `/api/rooms/...`. Сделал так:
+- `/api/bookings/**` → Booking Service со срезанием префикса: `/api/bookings/user/register` → `/user/register`, `/api/bookings/booking` → `/booking`;
+- `/api/hotels/**` → Hotel Service без изменений;
+- добавил `/api/rooms` и `/api/rooms/{один сегмент}` → Hotel Service (без этого пользователь не может искать номера через Gateway); внутренние `/api/rooms/{id}/confirm-availability` и `/release` не маршрутизируются — Gateway отвечает 404;
+- Swagger UI сервисов через Gateway не публикуется (открывается напрямую на портах сервисов).
+
+Пока по умолчанию: как описано выше.
+
+**Ответ:**
