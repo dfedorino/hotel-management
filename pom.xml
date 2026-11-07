@@ -19,6 +19,7 @@
     <description>Hotel booking microservices: Eureka, API Gateway, Hotel and Booking services</description>
 
     <modules>
+        <module>eureka-server</module>
     </modules>
 
     <properties>
