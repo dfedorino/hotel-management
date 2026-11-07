@@ -3,8 +3,6 @@ package ru.hotel.hotelservice.controller;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import ru.hotel.hotelapi.api.RoomsApi;
@@ -21,39 +19,37 @@ public class RoomController implements RoomsApi {
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<RoomResponse> createRoom(RoomRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(roomService.create(request));
+    public RoomResponse createRoom(RoomRequest request) {
+        return roomService.create(request);
     }
 
     @Override
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<List<RoomResponse>> findFreeRooms(Long hotelId, LocalDate startDate, LocalDate endDate) {
-        return ResponseEntity.ok(roomService.findFree(new RoomSearch(hotelId, startDate, endDate)));
+    public List<RoomResponse> findFreeRooms(Long hotelId, LocalDate startDate, LocalDate endDate) {
+        return roomService.findFree(new RoomSearch(hotelId, startDate, endDate));
     }
 
     @Override
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<List<RoomResponse>> findRecommendedRooms(
-            Long hotelId, LocalDate startDate, LocalDate endDate) {
-        return ResponseEntity.ok(roomService.findRecommended(new RoomSearch(hotelId, startDate, endDate)));
+    public List<RoomResponse> findRecommendedRooms(Long hotelId, LocalDate startDate, LocalDate endDate) {
+        return roomService.findRecommended(new RoomSearch(hotelId, startDate, endDate));
     }
 
     @Override
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<RoomResponse> getRoom(Long id) {
-        return ResponseEntity.ok(roomService.findById(id));
+    public RoomResponse getRoom(Long id) {
+        return roomService.findById(id);
     }
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<RoomResponse> updateRoom(Long id, RoomRequest request) {
-        return ResponseEntity.ok(roomService.update(id, request));
+    public RoomResponse updateRoom(Long id, RoomRequest request) {
+        return roomService.update(id, request);
     }
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteRoom(Long id) {
+    public void deleteRoom(Long id) {
         roomService.delete(id);
-        return ResponseEntity.noContent().build();
     }
 }

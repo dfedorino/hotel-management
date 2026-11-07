@@ -1,7 +1,6 @@
 package ru.hotel.hotelservice.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 import ru.hotel.hotelapi.api.RoomAvailabilityApi;
@@ -19,14 +18,13 @@ public class RoomAvailabilityController implements RoomAvailabilityApi {
 
     @Override
     @PreAuthorize("hasRole('INTERNAL')")
-    public ResponseEntity<ReservationResponse> confirmAvailability(Long id, AvailabilityRequest request) {
-        return ResponseEntity.ok(availabilityService.confirm(id, request));
+    public ReservationResponse confirmAvailability(Long id, AvailabilityRequest request) {
+        return availabilityService.confirm(id, request);
     }
 
     @Override
     @PreAuthorize("hasRole('INTERNAL')")
-    public ResponseEntity<Void> releaseRoom(Long id, ReleaseRequest request) {
+    public void releaseRoom(Long id, ReleaseRequest request) {
         availabilityService.release(id, request);
-        return ResponseEntity.noContent().build();
     }
 }

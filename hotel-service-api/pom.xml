@@ -77,6 +77,7 @@
                                 <useJakartaEe>true</useJakartaEe>
                                 <useTags>true</useTags>
                                 <useBeanValidation>true</useBeanValidation>
+                                <useResponseEntity>false</useResponseEntity>
                                 <serializableModel>true</serializableModel>
                                 <skipDefaultInterface>true</skipDefaultInterface>
                                 <openApiNullable>false</openApiNullable>
