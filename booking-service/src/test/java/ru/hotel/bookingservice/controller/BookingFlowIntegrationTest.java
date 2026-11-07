@@ -1,6 +1,8 @@
 package ru.hotel.bookingservice.controller;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -12,6 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.jayway.jsonpath.JsonPath;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
@@ -202,6 +205,37 @@ class BookingFlowIntegrationTest {
         assertThat(bookingRepository.findById(id.longValue()).orElseThrow().getStatus())
                 .isEqualTo(BookingStatus.CANCELLED);
         HOTEL.verify(1, postRequestedFor(urlPathMatching(RELEASE_PATH)));
+    }
+
+    @Test
+    void autoSelectionTakesTheNextRecommendedRoomWhenTheFirstWasJustTaken() throws Exception {
+        // given
+        HOTEL.stubFor(WireMock.get(urlPathEqualTo("/api/rooms/recommend")).willReturn(json(200, """
+                [{"id": 5, "hotelId": 1, "number": "101", "available": true, "timesBooked": 0},
+                 {"id": 6, "hotelId": 1, "number": "102", "available": true, "timesBooked": 1}]
+                """)));
+        HOTEL.stubFor(post(CONFIRM_PATH).willReturn(json(409, """
+                {"timestamp": "2027-01-01T10:00:00Z", "status": 409, "error": "Conflict",
+                 "message": "Room 5 is not available", "path": "/api/rooms/5/confirm-availability"}
+                """)));
+        HOTEL.stubFor(post("/api/rooms/6/confirm-availability").willReturn(reservation()));
+
+        // when
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/bookings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(aliceToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"autoSelect": true, "startDate": "%s", "endDate": "%s", "requestId": "req-1"}
+                                """.formatted(START, END)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.roomId").value(6))
+                .andExpect(jsonPath("$.status").value("CONFIRMED"));
+
+        // then
+        HOTEL.verify(postRequestedFor(urlPathEqualTo("/api/rooms/6/confirm-availability"))
+                .withRequestBody(matchingJsonPath("$.requestId", equalTo("req-1#2"))));
+        assertThat(bookingRepository.findByRequestId("req-1").orElseThrow().getSlotRequestId())
+                .isEqualTo("req-1#2");
     }
 
     @Test

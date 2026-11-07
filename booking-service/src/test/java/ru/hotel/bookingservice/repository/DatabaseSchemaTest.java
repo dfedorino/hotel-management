@@ -22,7 +22,7 @@ class DatabaseSchemaTest {
                 jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
 
         // then
-        assertThat(changeSets).containsExactly("001-users", "002-bookings");
+        assertThat(changeSets).containsExactly("001-users", "002-bookings", "003-bookings-slot-request-id");
     }
 
     @Test

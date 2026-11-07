@@ -61,6 +61,31 @@ class BookingTest {
                 .hasMessageContaining("CANCELLED");
     }
 
+    @Test
+    void slotKeyStartsAsTheRequestIdAndFollowsTheRoom() {
+        // given
+        Booking booking = booking();
+
+        // when
+        String initial = booking.getSlotRequestId();
+        booking.moveTo(6L, "req-1#2");
+
+        // then
+        assertThat(initial).isEqualTo("req-1");
+        assertThat(booking.getRoomId()).isEqualTo(6L);
+        assertThat(booking.getSlotRequestId()).isEqualTo("req-1#2");
+    }
+
+    @Test
+    void onlyPendingBookingCanMoveToAnotherRoom() {
+        // given
+        Booking booking = booking();
+        booking.confirm();
+
+        // when / then
+        assertThatThrownBy(() -> booking.moveTo(6L, "req-1#2")).isInstanceOf(IllegalStateException.class);
+    }
+
     private static Booking booking() {
         return new Booking(1L, 5L, START, END, "req-1", Instant.parse("2027-01-01T10:00:00Z"));
     }

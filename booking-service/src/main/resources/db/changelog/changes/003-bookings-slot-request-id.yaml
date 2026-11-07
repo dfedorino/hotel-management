@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-bookings-slot-request-id
+      author: hotel-management
+      comment: Automatic room selection may try several rooms; each attempt holds its slot under its own key.
+      changes:
+        - addColumn:
+            tableName: bookings
+            columns:
+              - column:
+                  name: slot_request_id
+                  type: VARCHAR(70)
+                  remarks: Key of the slot in Hotel Service; request_id, or request_id#n for the n-th auto-selected room
+        - update:
+            tableName: bookings
+            columns:
+              - column:
+                  name: slot_request_id
+                  valueComputed: request_id
+        - addNotNullConstraint:
+            tableName: bookings
+            columnName: slot_request_id
+            columnDataType: VARCHAR(70)
+        - addUniqueConstraint:
+            tableName: bookings
+            columnNames: slot_request_id
+            constraintName: uq_bookings_slot_request_id

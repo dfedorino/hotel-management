@@ -38,6 +38,14 @@ public class BookingStore {
         return booking;
     }
 
+    /** Automatic selection: the PENDING booking takes the next recommended room under a new slot key. */
+    @Transactional
+    public Booking moveToRoom(Long id, Long roomId, String slotRequestId) {
+        Booking booking = get(id);
+        booking.moveTo(roomId, slotRequestId);
+        return booking;
+    }
+
     /** No-op for an already cancelled booking. */
     @Transactional
     public Booking markCancelled(Long id) {

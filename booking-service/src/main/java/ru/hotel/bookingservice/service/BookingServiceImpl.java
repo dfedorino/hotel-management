@@ -18,26 +18,18 @@ import ru.hotel.bookingapi.model.BookingRequest;
 import ru.hotel.bookingapi.model.BookingResponse;
 import ru.hotel.bookingservice.domain.Booking;
 import ru.hotel.bookingservice.domain.BookingStatus;
-import ru.hotel.bookingservice.exception.ApiException;
 import ru.hotel.bookingservice.exception.BadRequestException;
 import ru.hotel.bookingservice.exception.ConflictException;
+import ru.hotel.bookingservice.exception.HotelErrors;
 import ru.hotel.bookingservice.exception.NotFoundException;
-import ru.hotel.bookingservice.exception.ServiceUnavailableException;
 import ru.hotel.bookingservice.mapper.BookingMapper;
 import ru.hotel.bookingservice.repository.BookingRepository;
-import ru.hotel.hotelapi.error.HotelServiceClientException;
 
 /**
- * Booking saga orchestrated by this service as a sequence of local transactions (see {@link BookingStore}):
- *
- * <ol>
- *   <li>record the booking as PENDING;
- *   <li>ask Hotel Service to hold the slot;
- *   <li>CONFIRMED on success; CANCELLED if Hotel Service rejects the request; if it does not answer, release the slot
- *       (it may have been held before the answer was lost) and CANCELLED.
- * </ol>
- *
- * All steps of one booking are logged with its {@code bookingId} in the MDC.
+ * Bookings of a user. Creating one is a saga of local transactions: the booking is first committed as PENDING (see
+ * {@link BookingStore}), then {@link BookingSaga} asks Hotel Service to hold the slot and confirms or compensates. A
+ * repeated requestId returns the booking created the first time. All steps are logged with {@code bookingId} in the
+ * MDC.
  */
 @Slf4j
 @Service
@@ -49,6 +41,8 @@ public class BookingServiceImpl implements BookingService {
 
     private final BookingStore store;
     private final BookingRepository bookingRepository;
+    private final RoomSelector roomSelector;
+    private final BookingSaga saga;
     private final HotelAvailability hotel;
     private final BookingMapper bookingMapper;
     private final Clock clock;
@@ -62,17 +56,18 @@ public class BookingServiceImpl implements BookingService {
         if (earlier.isPresent()) {
             return replay(earlier.get(), userId);
         }
-        Long roomId = chooseRoom(request);
+        List<Long> rooms = roomSelector.roomsToTry(request);
         Booking booking;
         try {
-            booking = store.createPending(userId, roomId, request.getStartDate(), request.getEndDate(), requestId);
+            booking = store.createPending(
+                    userId, rooms.getFirst(), request.getStartDate(), request.getEndDate(), requestId);
         } catch (DataIntegrityViolationException duplicate) {
             // a concurrent delivery of the same request won the insert
             return replay(store.findByRequestId(requestId).orElseThrow(() -> duplicate), userId);
         }
         try (MDC.MDCCloseable ignored = MDC.putCloseable(BOOKING_ID, String.valueOf(booking.getId()))) {
-            log.info("requestId={} roomId={} booking PENDING", requestId, roomId);
-            return bookingMapper.toResponse(holdSlot(booking));
+            log.info("requestId={} roomId={} booking PENDING", requestId, booking.getRoomId());
+            return bookingMapper.toResponse(saga.holdSlot(booking, rooms));
         }
     }
 
@@ -97,51 +92,14 @@ public class BookingServiceImpl implements BookingService {
         }
         try (MDC.MDCCloseable ignored = MDC.putCloseable(BOOKING_ID, String.valueOf(bookingId))) {
             try {
-                hotel.release(booking.getRoomId(), booking.getRequestId());
-            } catch (RuntimeException ex) {
+                hotel.release(booking.getRoomId(), booking.getSlotRequestId());
+            } catch (RuntimeException failure) {
                 // the booking stays as it was, so the user can simply retry the cancellation
-                throw unavailable(ex);
+                log.warn("requestId={} release failed: {}", booking.getRequestId(), failure.toString());
+                throw HotelErrors.translate(failure);
             }
             store.markCancelled(bookingId);
             log.info("requestId={} booking CANCELLED by user", booking.getRequestId());
-        }
-    }
-
-    private Booking holdSlot(Booking booking) {
-        try {
-            hotel.confirm(
-                    booking.getRoomId(),
-                    booking.getId(),
-                    booking.getRequestId(),
-                    booking.getStartDate(),
-                    booking.getEndDate());
-        } catch (HotelServiceClientException rejected) {
-            store.markCancelled(booking.getId());
-            log.info("requestId={} booking CANCELLED: {}", booking.getRequestId(), rejected.getMessage());
-            throw toApiException(rejected);
-        } catch (RuntimeException failure) {
-            compensate(booking, failure);
-            throw new ServiceUnavailableException("Hotel Service is unavailable, the booking was cancelled", failure);
-        }
-        Booking confirmed = store.markConfirmed(booking.getId());
-        log.info("requestId={} booking CONFIRMED", booking.getRequestId());
-        return confirmed;
-    }
-
-    /** The slot may have been held even though the answer was lost, so it is released before cancelling. */
-    private void compensate(Booking booking, RuntimeException failure) {
-        log.warn("requestId={} Hotel Service failed: {}, compensating", booking.getRequestId(), failure.toString());
-        try {
-            hotel.release(booking.getRoomId(), booking.getRequestId());
-            log.info("requestId={} compensation done: slot released", booking.getRequestId());
-        } catch (RuntimeException releaseFailure) {
-            log.error(
-                    "requestId={} compensation failed, slot may stay held in Hotel Service: {}",
-                    booking.getRequestId(),
-                    releaseFailure.toString());
-        } finally {
-            store.markCancelled(booking.getId());
-            log.info("requestId={} booking CANCELLED", booking.getRequestId());
         }
     }
 
@@ -157,30 +115,6 @@ public class BookingServiceImpl implements BookingService {
         return bookingMapper.toResponse(earlier);
     }
 
-    private Long chooseRoom(BookingRequest request) {
-        if (Boolean.TRUE.equals(request.getAutoSelect())) {
-            return pickLeastBookedRoom(request);
-        }
-        if (request.getRoomId() == null) {
-            throw new BadRequestException("roomId is required unless autoSelect is true");
-        }
-        return request.getRoomId();
-    }
-
-    private Long pickLeastBookedRoom(BookingRequest request) {
-        List<Long> candidates;
-        try {
-            candidates = hotel.recommendRooms(request.getHotelId(), request.getStartDate(), request.getEndDate());
-        } catch (HotelServiceClientException rejected) {
-            throw toApiException(rejected);
-        } catch (RuntimeException failure) {
-            throw unavailable(failure);
-        }
-        return candidates.stream()
-                .findFirst()
-                .orElseThrow(() -> new ConflictException("No free rooms for the requested dates"));
-    }
-
     private void validateDates(LocalDate start, LocalDate end) {
         if (!start.isBefore(end)) {
             throw new BadRequestException("startDate must be before endDate");
@@ -194,18 +128,5 @@ public class BookingServiceImpl implements BookingService {
         return bookingRepository
                 .findByIdAndUserId(bookingId, userId)
                 .orElseThrow(() -> new NotFoundException("Booking " + bookingId + " not found"));
-    }
-
-    private static ApiException toApiException(HotelServiceClientException rejected) {
-        return switch (rejected.getStatus()) {
-            case 404 -> new NotFoundException(rejected.getMessage(), rejected);
-            case 409 -> new ConflictException(rejected.getMessage(), rejected);
-            default -> new BadRequestException(rejected.getMessage(), rejected);
-        };
-    }
-
-    private static ServiceUnavailableException unavailable(RuntimeException cause) {
-        log.warn("Hotel Service is unavailable: {}", cause.toString());
-        return new ServiceUnavailableException("Hotel Service is unavailable, try again later", cause);
     }
 }

@@ -49,6 +49,13 @@ public class Booking {
     @Column(name = "request_id", nullable = false, length = 64)
     private String requestId;
 
+    /**
+     * Key of the slot in Hotel Service: the requestId for the first room tried, {@code requestId#n} for the n-th room
+     * of an automatic selection. Confirm, compensation and cancellation all use it.
+     */
+    @Column(name = "slot_request_id", nullable = false, length = 70)
+    private String slotRequestId;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -59,7 +66,17 @@ public class Booking {
         this.startDate = startDate;
         this.endDate = endDate;
         this.requestId = requestId;
+        this.slotRequestId = requestId;
         this.createdAt = createdAt;
+    }
+
+    /** Automatic selection only: a room taken meanwhile is replaced while the booking is still PENDING. */
+    public void moveTo(Long newRoomId, String newSlotRequestId) {
+        if (status != BookingStatus.PENDING) {
+            throw new IllegalStateException("Booking " + id + " is " + status + " and cannot change its room");
+        }
+        this.roomId = newRoomId;
+        this.slotRequestId = newSlotRequestId;
     }
 
     /** PENDING to CONFIRMED once Hotel Service has locked the slot. */

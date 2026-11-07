@@ -13,6 +13,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -69,6 +70,8 @@ class BookingServiceImplTest {
         bookingService = new BookingServiceImpl(
                 store,
                 bookingRepository,
+                new RoomSelector(hotel),
+                new BookingSaga(store, hotel),
                 hotel,
                 Mappers.getMapper(BookingMapper.class),
                 Clock.fixed(NOW, ZoneOffset.UTC));
@@ -217,6 +220,86 @@ class BookingServiceImplTest {
     }
 
     @Test
+    void autoSelectMovesToTheNextRecommendedRoomWhenTheFirstIsTaken() {
+        // given
+        given(store.findByRequestId("req-1")).willReturn(Optional.empty());
+        given(hotel.recommendRooms(1L, START, END)).willReturn(List.of(8L, 3L));
+        given(store.createPending(USER_ID, 8L, START, END, "req-1")).willReturn(booking(10L, 8L, "req-1"));
+        willThrow(new HotelServiceConflictException(hotelError(409, "Room 8 is not available")))
+                .given(hotel)
+                .confirm(8L, 10L, "req-1", START, END);
+        given(store.moveToRoom(10L, 3L, "req-1#2")).willReturn(moved(booking(10L, 8L, "req-1"), 3L, "req-1#2"));
+        given(store.markConfirmed(10L))
+                .willAnswer(invocation -> confirmed(moved(booking(10L, 8L, "req-1"), 3L, "req-1#2")));
+        BookingRequest request =
+                new BookingRequest(START, END).autoSelect(true).hotelId(1L).requestId("req-1");
+
+        // when
+        BookingResponse response = bookingService.create(USER_ID, request);
+
+        // then
+        assertThat(response.getRoomId()).isEqualTo(3L);
+        assertThat(response.getStatus()).isEqualTo(ru.hotel.bookingapi.model.BookingStatus.CONFIRMED);
+        verify(hotel).confirm(3L, 10L, "req-1#2", START, END);
+        verify(store, never()).markCancelled(anyLong());
+    }
+
+    @Test
+    void autoSelectGivesUpAfterThreeTakenRooms() {
+        // given
+        given(store.findByRequestId("req-1")).willReturn(Optional.empty());
+        given(hotel.recommendRooms(null, START, END)).willReturn(List.of(1L, 2L, 3L, 4L));
+        given(store.createPending(USER_ID, 1L, START, END, "req-1")).willReturn(booking(10L, 1L, "req-1"));
+        given(store.moveToRoom(10L, 2L, "req-1#2")).willReturn(moved(booking(10L, 1L, "req-1"), 2L, "req-1#2"));
+        given(store.moveToRoom(10L, 3L, "req-1#3")).willReturn(moved(booking(10L, 1L, "req-1"), 3L, "req-1#3"));
+        willThrow(new HotelServiceConflictException(hotelError(409, "taken")))
+                .given(hotel)
+                .confirm(anyLong(), eq(10L), anyString(), eq(START), eq(END));
+        BookingRequest request = new BookingRequest(START, END).autoSelect(true).requestId("req-1");
+
+        // when / then
+        assertThatThrownBy(() -> bookingService.create(USER_ID, request)).isInstanceOf(ConflictException.class);
+        verify(hotel, never()).confirm(eq(4L), anyLong(), anyString(), any(), any());
+        verify(store).markCancelled(10L);
+    }
+
+    @Test
+    void chosenRoomIsNotSwappedWhenItIsTaken() {
+        // given
+        given(store.findByRequestId("req-1")).willReturn(Optional.empty());
+        given(store.createPending(USER_ID, 5L, START, END, "req-1")).willReturn(booking(10L, 5L, "req-1"));
+        willThrow(new HotelServiceConflictException(hotelError(409, "taken")))
+                .given(hotel)
+                .confirm(5L, 10L, "req-1", START, END);
+        BookingRequest request = request(5L).requestId("req-1");
+
+        // when / then
+        assertThatThrownBy(() -> bookingService.create(USER_ID, request)).isInstanceOf(ConflictException.class);
+        verify(store, never()).moveToRoom(anyLong(), anyLong(), anyString());
+        verifyNoMoreInteractions(hotel);
+    }
+
+    @Test
+    void compensationReleasesTheSlotOfTheRoomTriedLast() {
+        // given
+        given(store.findByRequestId("req-1")).willReturn(Optional.empty());
+        given(hotel.recommendRooms(null, START, END)).willReturn(List.of(8L, 3L));
+        given(store.createPending(USER_ID, 8L, START, END, "req-1")).willReturn(booking(10L, 8L, "req-1"));
+        willThrow(new HotelServiceConflictException(hotelError(409, "taken")))
+                .given(hotel)
+                .confirm(8L, 10L, "req-1", START, END);
+        given(store.moveToRoom(10L, 3L, "req-1#2")).willReturn(moved(booking(10L, 8L, "req-1"), 3L, "req-1#2"));
+        willThrow(new IllegalStateException("timeout")).given(hotel).confirm(3L, 10L, "req-1#2", START, END);
+        BookingRequest request = new BookingRequest(START, END).autoSelect(true).requestId("req-1");
+
+        // when / then
+        assertThatThrownBy(() -> bookingService.create(USER_ID, request))
+                .isInstanceOf(ServiceUnavailableException.class);
+        verify(hotel).release(3L, "req-1#2");
+        verify(store).markCancelled(10L);
+    }
+
+    @Test
     void autoSelectWithoutFreeRoomsIsAConflict() {
         // given
         given(store.findByRequestId("req-1")).willReturn(Optional.empty());
@@ -335,6 +418,11 @@ class BookingServiceImplTest {
     private static Booking booking(Long id, Long roomId, String requestId) {
         Booking booking = new Booking(USER_ID, roomId, START, END, requestId, NOW);
         booking.setId(id);
+        return booking;
+    }
+
+    private static Booking moved(Booking booking, Long roomId, String slotRequestId) {
+        booking.moveTo(roomId, slotRequestId);
         return booking;
     }
 
