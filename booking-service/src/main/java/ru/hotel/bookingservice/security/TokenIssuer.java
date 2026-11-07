@@ -9,5 +9,5 @@ public interface TokenIssuer {
     TokenResponse issue(User user);
 
     /** Short-lived token with the INTERNAL role for saga calls to Hotel Service. */
-    String issueServiceToken();
+    ServiceToken issueServiceToken();
 }

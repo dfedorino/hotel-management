@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
-import ru.hotel.bookingservice.security.TokenIssuer;
+import ru.hotel.bookingservice.security.ServiceTokenCache;
 import ru.hotel.hotelapi.api.RoomAvailabilityApiClient;
 import ru.hotel.hotelapi.api.RoomsApiClient;
 
@@ -15,7 +15,7 @@ import ru.hotel.hotelapi.api.RoomsApiClient;
 public class HotelClientConfig {
 
     @Bean
-    public RequestInterceptor serviceTokenInterceptor(TokenIssuer tokenIssuer) {
-        return template -> template.header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenIssuer.issueServiceToken());
+    public RequestInterceptor serviceTokenInterceptor(ServiceTokenCache serviceTokens) {
+        return template -> template.header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceTokens.get());
     }
 }

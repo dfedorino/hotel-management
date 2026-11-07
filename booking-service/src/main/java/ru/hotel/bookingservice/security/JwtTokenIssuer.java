@@ -53,15 +53,16 @@ public class JwtTokenIssuer implements TokenIssuer {
     }
 
     @Override
-    public String issueServiceToken() {
+    public ServiceToken issueServiceToken() {
         Instant now = clock.instant();
+        Instant expiresAt = now.plus(SERVICE_TOKEN_TTL);
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject(SERVICE_SUBJECT)
                 .claim(ROLES_CLAIM, List.of(INTERNAL_ROLE))
                 .issuedAt(now)
-                .expiresAt(now.plus(SERVICE_TOKEN_TTL))
+                .expiresAt(expiresAt)
                 .build();
-        return encode(claims);
+        return new ServiceToken(encode(claims), expiresAt);
     }
 
     private String encode(JwtClaimsSet claims) {

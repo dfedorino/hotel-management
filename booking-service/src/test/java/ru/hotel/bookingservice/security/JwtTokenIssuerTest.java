@@ -54,11 +54,12 @@ class JwtTokenIssuerTest {
     @Test
     void serviceTokenCarriesOnlyTheInternalRole() {
         // when
-        String token = issuer.issueServiceToken();
+        ServiceToken token = issuer.issueServiceToken();
 
         // then
-        Jwt jwt = decoder.decode(token);
+        Jwt jwt = decoder.decode(token.value());
         assertThat(jwt.getSubject()).isEqualTo(JwtTokenIssuer.SERVICE_SUBJECT);
         assertThat(jwt.getClaimAsStringList("roles")).containsExactly("INTERNAL");
+        assertThat(token.expiresAt()).isEqualTo(jwt.getExpiresAt()).isEqualTo(NOW.plus(Duration.ofMinutes(5)));
     }
 }
