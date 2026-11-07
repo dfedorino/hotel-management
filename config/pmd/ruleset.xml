@@ -45,6 +45,16 @@
         <exclude name="TooManyMethods"/>
         <!-- Needs an explicit package list; layering is checked by ArchUnit tests instead. -->
         <exclude name="LoosePackageCoupling"/>
+        <!-- Re-declared below with a JPA exception. -->
+        <exclude name="ImmutableField"/>
+    </rule>
+
+    <rule ref="category/java/design.xml/ImmutableField">
+        <properties>
+            <!-- Hibernate fills entity fields reflectively after the no-arg constructor, so they cannot be final. -->
+            <property name="violationSuppressXPath"
+                      value="ancestor::ClassDeclaration[pmd-java:hasAnnotation('jakarta.persistence.Entity')]"/>
+        </properties>
     </rule>
 
     <rule ref="category/java/multithreading.xml">
