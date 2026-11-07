@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <!-- Code generated from the OpenAPI contract and by MapStruct is not maintained by hand. -->
+    <Match>
+        <Or>
+            <Package name="ru.hotel.hotelapi.api"/>
+            <Package name="ru.hotel.hotelapi.model"/>
+            <Class name="~.*MapperImpl"/>
+        </Or>
+    </Match>
+
+    <!-- JPA entities reference other managed entities by design; copying them would break the persistence context. -->
+    <Match>
+        <Package name="ru.hotel.hotelservice.domain"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>

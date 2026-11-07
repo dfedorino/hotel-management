@@ -99,8 +99,9 @@ public class RoomServiceImpl implements RoomService {
     }
 
     private static void applyAvailability(Room room, RoomRequest request) {
-        if (request.getAvailable() != null) {
-            room.setAvailable(request.getAvailable());
+        Boolean available = request.getAvailable();
+        if (available != null) {
+            room.setAvailable(available);
         }
     }
 
