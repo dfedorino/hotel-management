@@ -1,0 +1,79 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-hotels-and-rooms
+      author: hotel-management
+      changes:
+        - createTable:
+            tableName: hotels
+            remarks: Hotels managed by ADMIN
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_hotels
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: address
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: rooms
+            remarks: Rooms of a hotel with their booking statistics
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_rooms
+              - column:
+                  name: hotel_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_rooms_hotel
+                    references: hotels(id)
+              - column:
+                  name: number
+                  type: VARCHAR(32)
+                  remarks: Room number as shown to guests, unique within the hotel
+                  constraints:
+                    nullable: false
+              - column:
+                  name: available
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  remarks: Operational availability (repair, out of service); not used for date occupancy
+                  constraints:
+                    nullable: false
+              - column:
+                  name: times_booked
+                  type: INT
+                  defaultValueNumeric: 0
+                  remarks: Active bookings of the room; recommendations prefer the lowest value
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: rooms
+            columnNames: hotel_id, number
+            constraintName: uq_rooms_hotel_number
+
+        - createIndex:
+            tableName: rooms
+            indexName: idx_rooms_times_booked
+            columns:
+              - column:
+                  name: times_booked
+              - column:
+                  name: id

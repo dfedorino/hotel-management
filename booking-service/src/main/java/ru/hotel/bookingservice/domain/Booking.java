@@ -7,7 +7,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -21,7 +20,7 @@ import lombok.Setter;
  * services); {@code requestId} is the correlation id that makes repeated requests idempotent.
  */
 @Entity
-@Table(name = "bookings", indexes = @Index(name = "idx_bookings_user_created", columnList = "user_id, created_at"))
+@Table(name = "bookings")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Booking {
@@ -47,7 +46,7 @@ public class Booking {
     @Column(nullable = false, length = 16)
     private BookingStatus status = BookingStatus.PENDING;
 
-    @Column(name = "request_id", nullable = false, unique = true, length = 64)
+    @Column(name = "request_id", nullable = false, length = 64)
     private String requestId;
 
     @Column(name = "created_at", nullable = false)

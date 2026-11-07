@@ -7,6 +7,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -16,7 +17,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import ru.hotel.bookingservice.domain.Booking;
 import ru.hotel.bookingservice.domain.BookingStatus;
+import ru.hotel.bookingservice.domain.Role;
+import ru.hotel.bookingservice.domain.User;
 import ru.hotel.bookingservice.repository.BookingRepository;
+import ru.hotel.bookingservice.repository.UserRepository;
 
 @DataJpaTest
 @Import({BookingStore.class, BookingStoreTest.FixedClock.class})
@@ -32,10 +36,20 @@ class BookingStoreTest {
     @Autowired
     private BookingRepository bookingRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private Long userId;
+
+    @BeforeEach
+    void setUp() {
+        userId = userRepository.save(new User("alice", "hash", Role.USER)).getId();
+    }
+
     @Test
     void createPendingStoresBookingWithCreationTime() {
         // when
-        Booking booking = store.createPending(1L, 5L, START, END, "req-1");
+        Booking booking = store.createPending(userId, 5L, START, END, "req-1");
 
         // then
         Booking stored = bookingRepository.findById(booking.getId()).orElseThrow();
@@ -47,17 +61,17 @@ class BookingStoreTest {
     @Test
     void secondBookingWithSameRequestIdIsRejectedByTheDatabase() {
         // given
-        store.createPending(1L, 5L, START, END, "req-1");
+        store.createPending(userId, 5L, START, END, "req-1");
 
         // when / then
-        assertThatThrownBy(() -> store.createPending(1L, 5L, START, END, "req-1"))
+        assertThatThrownBy(() -> store.createPending(userId, 5L, START, END, "req-1"))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
     void transitionsArePersisted() {
         // given
-        Long id = store.createPending(1L, 5L, START, END, "req-1").getId();
+        Long id = store.createPending(userId, 5L, START, END, "req-1").getId();
 
         // when
         store.markConfirmed(id);

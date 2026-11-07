@@ -1,6 +1,11 @@
 spring:
   application:
     name: booking-service
+  # Schema comes from the Liquibase changelog (db/changelog); Hibernate only checks the entities against it.
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
 
 server:
   port: ${PORT:8082}

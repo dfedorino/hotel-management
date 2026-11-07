@@ -8,7 +8,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -20,9 +19,7 @@ import lombok.Setter;
 
 /** A slot of a room held for a booking over [startDate, endDate); endDate is the check-out day. */
 @Entity
-@Table(
-        name = "room_reservations",
-        indexes = @Index(name = "idx_reservations_room_dates", columnList = "room_id, start_date, end_date"))
+@Table(name = "room_reservations")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -39,7 +36,7 @@ public class RoomReservation {
     @Column(name = "booking_id", nullable = false)
     private Long bookingId;
 
-    @Column(name = "request_id", nullable = false, unique = true)
+    @Column(name = "request_id", nullable = false, length = 64)
     private String requestId;
 
     @Column(name = "start_date", nullable = false)

@@ -1,0 +1,8 @@
+# Booking Service schema, applied in order by Liquibase at startup; Hibernate only validates it (ddl-auto: validate).
+databaseChangeLog:
+  - include:
+      file: changes/001-users.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/002-bookings.yaml
+      relativeToChangelogFile: true

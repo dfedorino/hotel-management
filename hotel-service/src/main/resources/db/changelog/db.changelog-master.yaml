@@ -1,0 +1,8 @@
+# Hotel Service schema, applied in order by Liquibase at startup; Hibernate only validates it (ddl-auto: validate).
+databaseChangeLog:
+  - include:
+      file: changes/001-hotels-and-rooms.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/002-room-reservations.yaml
+      relativeToChangelogFile: true
