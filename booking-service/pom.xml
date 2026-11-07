@@ -22,6 +22,11 @@
         </dependency>
         <dependency>
             <groupId>ru.hotel</groupId>
+            <artifactId>booking-service-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.hotel</groupId>
             <artifactId>hotel-service-api</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -128,43 +133,6 @@
                         <booking.demo-data.enabled>false</booking.demo-data.enabled>
                     </systemPropertyVariables>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.openapitools</groupId>
-                <artifactId>openapi-generator-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>booking-service</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/openapi/booking-service.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <apiPackage>ru.hotel.bookingapi.api</apiPackage>
-                            <modelPackage>ru.hotel.bookingapi.model</modelPackage>
-                            <generateApiTests>false</generateApiTests>
-                            <generateModelTests>false</generateModelTests>
-                            <generateApiDocumentation>false</generateApiDocumentation>
-                            <generateModelDocumentation>false</generateModelDocumentation>
-                            <generateSupportingFiles>false</generateSupportingFiles>
-                            <configOptions>
-                                <interfaceOnly>true</interfaceOnly>
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useJakartaEe>true</useJakartaEe>
-                                <useTags>true</useTags>
-                                <useBeanValidation>true</useBeanValidation>
-                                <useResponseEntity>false</useResponseEntity>
-                                <serializableModel>true</serializableModel>
-                                <skipDefaultInterface>true</skipDefaultInterface>
-                                <openApiNullable>false</openApiNullable>
-                                <documentationProvider>none</documentationProvider>
-                                <annotationLibrary>none</annotationLibrary>
-                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

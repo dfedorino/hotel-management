@@ -23,6 +23,7 @@
         <module>jwt-resource-server-spring-boot-starter</module>
         <module>hotel-service-api</module>
         <module>hotel-service</module>
+        <module>booking-service-api</module>
         <module>booking-service</module>
         <module>api-gateway</module>
     </modules>
