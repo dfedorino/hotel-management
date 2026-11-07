@@ -71,3 +71,7 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 2
         ignore-exceptions:
           - ru.hotel.hotelapi.error.HotelServiceClientException
+
+# Every request is traced (no exporter: trace and span ids correlate the logs of all services).
+management.tracing.sampling.probability: 1.0
+logging.pattern.correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-},bookingId=%X{bookingId:-}] "

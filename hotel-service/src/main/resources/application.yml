@@ -39,3 +39,6 @@ security:
   jwt:
     # Must match Booking Service; override with JWT_SECRET outside local development.
     secret: ${JWT_SECRET:local-dev-secret-change-me-0123456789abcdef}
+
+# Every request is traced (no exporter: trace and span ids correlate the logs of all services).
+management.tracing.sampling.probability: 1.0

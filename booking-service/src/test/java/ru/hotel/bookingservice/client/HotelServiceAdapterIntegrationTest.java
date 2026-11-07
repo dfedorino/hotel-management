@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -32,6 +33,7 @@ import ru.hotel.bookingservice.service.HotelAvailability;
 import ru.hotel.hotelapi.error.HotelServiceConflictException;
 
 @SpringBootTest
+@AutoConfigureObservability
 class HotelServiceAdapterIntegrationTest {
 
     private static final String CONFIRM_PATH = "/api/rooms/5/confirm-availability";
@@ -88,6 +90,19 @@ class HotelServiceAdapterIntegrationTest {
                 .getHeader(HttpHeaders.AUTHORIZATION)
                 .substring("Bearer ".length());
         assertThat(jwtDecoder.decode(token).getClaimAsStringList("roles")).containsExactly("INTERNAL");
+    }
+
+    @Test
+    void callsCarryTraceContextForCorrelatedLogs() {
+        // given
+        HOTEL.stubFor(post(CONFIRM_PATH).willReturn(json(200, RESERVATION)));
+
+        // when
+        hotelAvailability.confirm(5L, 100L, "req-1", START, END);
+
+        // then
+        HOTEL.verify(postRequestedFor(urlPathEqualTo(CONFIRM_PATH))
+                .withHeader("traceparent", matching("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]")));
     }
 
     @Test
