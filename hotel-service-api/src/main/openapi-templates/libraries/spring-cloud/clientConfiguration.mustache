@@ -1,0 +1,15 @@
+package {{configPackage}};
+
+import feign.codec.ErrorDecoder;
+import org.springframework.context.annotation.Bean;
+
+/**
+ * Feign configuration shared by all generated Hotel Service clients.
+ */
+public class ClientConfiguration {
+
+    @Bean
+    public ErrorDecoder hotelServiceErrorDecoder() {
+        return new HotelServiceErrorDecoder();
+    }
+}
