@@ -1,0 +1,346 @@
+openapi: 3.0.3
+info:
+  title: booking-service
+  description: Users, authentication (JWT issuing), bookings with a saga against Hotel Service.
+  version: 1.0.0
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+tags:
+  - name: auth
+    description: Registration and login, public
+  - name: users
+    description: User administration (ADMIN)
+  - name: bookings
+    description: Own bookings (USER)
+
+paths:
+  /user/register:
+    post:
+      tags: [auth]
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsRequest'
+      responses:
+        '201':
+          description: Registered as USER, token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /user/auth:
+    post:
+      tags: [auth]
+      operationId: authenticate
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsRequest'
+      responses:
+        '200':
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /user:
+    post:
+      tags: [users]
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /user/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [users]
+      operationId: updateUser
+      description: Changes only the fields that are present.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [users]
+      operationId: deleteUser
+      responses:
+        '204':
+          description: Deleted
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /booking:
+    post:
+      tags: [bookings]
+      operationId: createBooking
+      description: >
+        Creates a PENDING booking, asks Hotel Service to hold the slot and returns CONFIRMED on success.
+        Repeating a request with the same requestId returns the booking created the first time.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: Confirmed booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /bookings:
+    get:
+      tags: [bookings]
+      operationId: listBookings
+      description: Bookings of the current user, newest first.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: size
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Page of bookings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingPage'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /booking/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [bookings]
+      operationId: getBooking
+      responses:
+        '200':
+          description: Booking of the current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [bookings]
+      operationId: cancelBooking
+      description: Cancels the booking and releases the slot in Hotel Service; cancelling twice is a no-op.
+      responses:
+        '204':
+          description: Cancelled
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Missing or invalid token, or wrong credentials
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: Role is not allowed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Resource not found (or belongs to another user)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: Conflicting state (duplicate username, room taken for the dates)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    ServiceUnavailable:
+      description: Hotel Service did not answer in time; the booking was cancelled
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [timestamp, status, error, message, path]
+      properties:
+        timestamp: { type: string, format: date-time }
+        status: { type: integer }
+        error: { type: string }
+        message: { type: string }
+        path: { type: string }
+
+    Role:
+      type: string
+      enum: [USER, ADMIN]
+
+    CredentialsRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 50, pattern: '^[A-Za-z0-9._-]+$' }
+        password: { type: string, minLength: 8, maxLength: 100 }
+
+    TokenResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn]
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string, example: Bearer }
+        expiresIn:
+          type: integer
+          format: int64
+          description: Seconds until the token expires.
+
+    UserCreateRequest:
+      type: object
+      required: [username, password, role]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 50, pattern: '^[A-Za-z0-9._-]+$' }
+        password: { type: string, minLength: 8, maxLength: 100 }
+        role: { $ref: '#/components/schemas/Role' }
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        username: { type: string, minLength: 3, maxLength: 50, pattern: '^[A-Za-z0-9._-]+$' }
+        password: { type: string, minLength: 8, maxLength: 100 }
+        role: { $ref: '#/components/schemas/Role' }
+
+    UserResponse:
+      type: object
+      required: [id, username, role]
+      properties:
+        id: { type: integer, format: int64 }
+        username: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+
+    BookingStatus:
+      type: string
+      enum: [PENDING, CONFIRMED, CANCELLED]
+
+    BookingRequest:
+      type: object
+      required: [startDate, endDate]
+      properties:
+        roomId:
+          type: integer
+          format: int64
+          description: Required unless autoSelect is true; ignored when autoSelect is true.
+        autoSelect:
+          type: boolean
+          default: false
+          description: Pick the least booked free room (Hotel Service recommendations).
+        hotelId:
+          type: integer
+          format: int64
+          description: Limits automatic selection to one hotel.
+        startDate: { type: string, format: date }
+        endDate:
+          type: string
+          format: date
+          description: Check-out date (exclusive).
+        requestId:
+          type: string
+          maxLength: 64
+          description: Client correlation id; repeating it returns the original booking. Generated when absent.
+
+    BookingResponse:
+      type: object
+      required: [id, userId, roomId, startDate, endDate, status, createdAt, requestId]
+      properties:
+        id: { type: integer, format: int64 }
+        userId: { type: integer, format: int64 }
+        roomId: { type: integer, format: int64 }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        status: { $ref: '#/components/schemas/BookingStatus' }
+        createdAt: { type: string, format: date-time }
+        requestId: { type: string }
+
+    BookingPage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingResponse'
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }

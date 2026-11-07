@@ -9,6 +9,8 @@
         <Or>
             <Package name="ru.hotel.hotelapi.api"/>
             <Package name="ru.hotel.hotelapi.model"/>
+            <Package name="ru.hotel.bookingapi.api"/>
+            <Package name="ru.hotel.bookingapi.model"/>
             <Class name="~.*MapperImpl"/>
         </Or>
     </Match>

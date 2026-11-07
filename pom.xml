@@ -23,6 +23,7 @@
         <module>jwt-resource-server</module>
         <module>hotel-service-api</module>
         <module>hotel-service</module>
+        <module>booking-service</module>
     </modules>
 
     <properties>
@@ -262,6 +263,7 @@
                     <excludes>
                         <exclude>ru/hotel/hotelapi/api/**</exclude>
                         <exclude>ru/hotel/hotelapi/model/**</exclude>
+                        <exclude>ru/hotel/bookingapi/**</exclude>
                         <exclude>**/*MapperImpl.class</exclude>
                         <exclude>**/*Application.class</exclude>
                     </excludes>
