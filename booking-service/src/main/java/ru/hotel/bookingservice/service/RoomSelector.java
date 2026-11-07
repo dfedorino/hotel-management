@@ -31,7 +31,7 @@ public class RoomSelector {
     }
 
     private List<Long> leastBookedRooms(BookingRequest request) {
-        List<Long> candidates;
+        List<RoomCandidate> candidates;
         try {
             candidates = hotel.recommendRooms(request.getHotelId(), request.getStartDate(), request.getEndDate());
         } catch (RuntimeException failure) {
@@ -40,6 +40,9 @@ public class RoomSelector {
         if (candidates.isEmpty()) {
             throw new ConflictException("No free rooms for the requested dates");
         }
-        return candidates.stream().limit(AUTO_SELECT_ATTEMPTS).toList();
+        return candidates.stream()
+                .limit(AUTO_SELECT_ATTEMPTS)
+                .map(RoomCandidate::id)
+                .toList();
     }
 }

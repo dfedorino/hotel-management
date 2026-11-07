@@ -206,7 +206,7 @@ class BookingServiceImplTest {
     void autoSelectBooksTheLeastBookedFreeRoomAndIgnoresRoomId() {
         // given
         given(store.findByRequestId("req-1")).willReturn(Optional.empty());
-        given(hotel.recommendRooms(1L, START, END)).willReturn(List.of(8L, 3L));
+        given(hotel.recommendRooms(1L, START, END)).willReturn(rooms(8L, 3L));
         given(store.createPending(USER_ID, 8L, START, END, "req-1")).willReturn(booking(10L, 8L, "req-1"));
         given(store.markConfirmed(10L)).willAnswer(invocation -> confirmed(booking(10L, 8L, "req-1")));
         BookingRequest request = request(99L).autoSelect(true).hotelId(1L).requestId("req-1");
@@ -223,7 +223,7 @@ class BookingServiceImplTest {
     void autoSelectMovesToTheNextRecommendedRoomWhenTheFirstIsTaken() {
         // given
         given(store.findByRequestId("req-1")).willReturn(Optional.empty());
-        given(hotel.recommendRooms(1L, START, END)).willReturn(List.of(8L, 3L));
+        given(hotel.recommendRooms(1L, START, END)).willReturn(rooms(8L, 3L));
         given(store.createPending(USER_ID, 8L, START, END, "req-1")).willReturn(booking(10L, 8L, "req-1"));
         willThrow(new HotelServiceConflictException(hotelError(409, "Room 8 is not available")))
                 .given(hotel)
@@ -248,7 +248,7 @@ class BookingServiceImplTest {
     void autoSelectGivesUpAfterThreeTakenRooms() {
         // given
         given(store.findByRequestId("req-1")).willReturn(Optional.empty());
-        given(hotel.recommendRooms(null, START, END)).willReturn(List.of(1L, 2L, 3L, 4L));
+        given(hotel.recommendRooms(null, START, END)).willReturn(rooms(1L, 2L, 3L, 4L));
         given(store.createPending(USER_ID, 1L, START, END, "req-1")).willReturn(booking(10L, 1L, "req-1"));
         given(store.moveToRoom(10L, 2L, "req-1#2")).willReturn(moved(booking(10L, 1L, "req-1"), 2L, "req-1#2"));
         given(store.moveToRoom(10L, 3L, "req-1#3")).willReturn(moved(booking(10L, 1L, "req-1"), 3L, "req-1#3"));
@@ -283,7 +283,7 @@ class BookingServiceImplTest {
     void compensationReleasesTheSlotOfTheRoomTriedLast() {
         // given
         given(store.findByRequestId("req-1")).willReturn(Optional.empty());
-        given(hotel.recommendRooms(null, START, END)).willReturn(List.of(8L, 3L));
+        given(hotel.recommendRooms(null, START, END)).willReturn(rooms(8L, 3L));
         given(store.createPending(USER_ID, 8L, START, END, "req-1")).willReturn(booking(10L, 8L, "req-1"));
         willThrow(new HotelServiceConflictException(hotelError(409, "taken")))
                 .given(hotel)
@@ -303,7 +303,7 @@ class BookingServiceImplTest {
     void autoSelectWithoutFreeRoomsIsAConflict() {
         // given
         given(store.findByRequestId("req-1")).willReturn(Optional.empty());
-        given(hotel.recommendRooms(null, START, END)).willReturn(List.of());
+        given(hotel.recommendRooms(null, START, END)).willReturn(rooms());
         BookingRequest request = new BookingRequest(START, END).autoSelect(true).requestId("req-1");
 
         // when / then
@@ -419,6 +419,12 @@ class BookingServiceImplTest {
         Booking booking = new Booking(USER_ID, roomId, START, END, requestId, NOW);
         booking.setId(id);
         return booking;
+    }
+
+    private static List<RoomCandidate> rooms(Long... ids) {
+        return java.util.Arrays.stream(ids)
+                .map(id -> new RoomCandidate(id, 1L, "R" + id, 0))
+                .toList();
     }
 
     private static Booking moved(Booking booking, Long roomId, String slotRequestId) {

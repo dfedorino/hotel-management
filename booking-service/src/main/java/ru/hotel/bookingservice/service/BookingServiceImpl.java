@@ -1,7 +1,6 @@
 package ru.hotel.bookingservice.service;
 
 import java.time.Clock;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,7 +17,6 @@ import ru.hotel.bookingapi.model.BookingRequest;
 import ru.hotel.bookingapi.model.BookingResponse;
 import ru.hotel.bookingservice.domain.Booking;
 import ru.hotel.bookingservice.domain.BookingStatus;
-import ru.hotel.bookingservice.exception.BadRequestException;
 import ru.hotel.bookingservice.exception.ConflictException;
 import ru.hotel.bookingservice.exception.HotelErrors;
 import ru.hotel.bookingservice.exception.NotFoundException;
@@ -49,7 +47,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponse create(Long userId, BookingRequest request) {
-        validateDates(request.getStartDate(), request.getEndDate());
+        StayDates.requireValid(request.getStartDate(), request.getEndDate(), clock);
         String requestId = Optional.ofNullable(request.getRequestId())
                 .orElseGet(() -> UUID.randomUUID().toString());
         Optional<Booking> earlier = store.findByRequestId(requestId);
@@ -113,15 +111,6 @@ public class BookingServiceImpl implements BookingService {
                 earlier.getRequestId(),
                 earlier.getStatus());
         return bookingMapper.toResponse(earlier);
-    }
-
-    private void validateDates(LocalDate start, LocalDate end) {
-        if (!start.isBefore(end)) {
-            throw new BadRequestException("startDate must be before endDate");
-        }
-        if (start.isBefore(LocalDate.now(clock))) {
-            throw new BadRequestException("startDate must not be in the past");
-        }
     }
 
     private Booking getOwn(Long userId, Long bookingId) {

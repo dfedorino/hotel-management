@@ -7,6 +7,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import ru.hotel.bookingservice.service.HotelAvailability;
+import ru.hotel.bookingservice.service.RoomCandidate;
 import ru.hotel.hotelapi.api.RoomAvailabilityApiClient;
 import ru.hotel.hotelapi.api.RoomsApiClient;
 import ru.hotel.hotelapi.model.AvailabilityRequest;
@@ -40,9 +41,13 @@ public class HotelServiceAdapter implements HotelAvailability {
     }
 
     @Override
-    public List<Long> recommendRooms(Long hotelId, LocalDate start, LocalDate end) {
+    public List<RoomCandidate> recommendRooms(Long hotelId, LocalDate start, LocalDate end) {
         return roomsClient.findRecommendedRooms(hotelId, start, end).stream()
-                .map(RoomResponse::getId)
+                .map(HotelServiceAdapter::toCandidate)
                 .toList();
+    }
+
+    private static RoomCandidate toCandidate(RoomResponse room) {
+        return new RoomCandidate(room.getId(), room.getHotelId(), room.getNumber(), room.getTimesBooked());
     }
 }

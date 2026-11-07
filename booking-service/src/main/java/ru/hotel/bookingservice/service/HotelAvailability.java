@@ -15,6 +15,6 @@ public interface HotelAvailability {
     /** Compensation: releases the slot held by requestId; a no-op if nothing is held. */
     void release(Long roomId, String requestId);
 
-    /** Free room ids, least booked first. */
-    List<Long> recommendRooms(Long hotelId, LocalDate start, LocalDate end);
+    /** Free rooms, least booked first. */
+    List<RoomCandidate> recommendRooms(Long hotelId, LocalDate start, LocalDate end);
 }

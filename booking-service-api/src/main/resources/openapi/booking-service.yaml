@@ -14,6 +14,8 @@ tags:
     description: User administration (ADMIN)
   - name: bookings
     description: Own bookings (USER)
+  - name: rooms
+    description: Room recommendations for booking (USER)
 
 paths:
   /api/bookings/users/register:
@@ -187,6 +189,40 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
 
+  /api/bookings/rooms/recommend:
+    get:
+      tags: [rooms]
+      operationId: recommendRooms
+      description: >
+        Free rooms for the dates, least booked first (times_booked ascending, then id), so that bookings spread evenly
+        over the rooms. The same order is used by autoSelect.
+      parameters:
+        - name: hotelId
+          in: query
+          required: false
+          schema: { type: integer, format: int64 }
+        - name: startDate
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          required: true
+          description: Check-out date (exclusive).
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Recommended rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecommendedRoom'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
   /api/bookings/{id}:
     parameters:
       - $ref: '#/components/parameters/Id'
@@ -336,6 +372,17 @@ components:
         size: { type: integer }
         totalElements: { type: integer, format: int64 }
         totalPages: { type: integer }
+
+    RecommendedRoom:
+      type: object
+      required: [id, hotelId, number, timesBooked]
+      properties:
+        id: { type: integer, format: int64 }
+        hotelId: { type: integer, format: int64 }
+        number: { type: string }
+        timesBooked:
+          type: integer
+          description: Active bookings of the room; lower values are recommended first.
 
     BookingStatus:
       type: string

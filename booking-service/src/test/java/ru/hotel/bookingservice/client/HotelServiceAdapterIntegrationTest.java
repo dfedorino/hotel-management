@@ -30,6 +30,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import ru.hotel.bookingservice.service.HotelAvailability;
+import ru.hotel.bookingservice.service.RoomCandidate;
 import ru.hotel.hotelapi.error.HotelServiceConflictException;
 
 @SpringBootTest
@@ -204,10 +205,10 @@ class HotelServiceAdapterIntegrationTest {
                         """)));
 
         // when
-        List<Long> rooms = hotelAvailability.recommendRooms(1L, START, END);
+        List<RoomCandidate> rooms = hotelAvailability.recommendRooms(1L, START, END);
 
         // then
-        assertThat(rooms).containsExactly(8L, 3L);
+        assertThat(rooms).containsExactly(new RoomCandidate(8L, 1L, "203", 0), new RoomCandidate(3L, 1L, "103", 1));
     }
 
     private static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder json(int status, String body) {
