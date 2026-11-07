@@ -18,6 +18,10 @@ management:
       exposure:
         include: health,info
 
+springdoc:
+  swagger-ui:
+    url: /openapi/hotel-service.yaml
+
 hotel:
   demo-data:
     enabled: ${DEMO_DATA:true}

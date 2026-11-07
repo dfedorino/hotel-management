@@ -51,6 +51,13 @@ class AccessControlIntegrationTest {
     }
 
     @Test
+    void unknownPathGets404WithErrorBody() throws Exception {
+        mockMvc.perform(withToken(get("/api/unknown"), TestTokens.token("alice", "USER")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
     void userCanListHotels() throws Exception {
         mockMvc.perform(withToken(get("/api/hotels"), TestTokens.token("alice", "USER")))
                 .andExpect(status().isOk());
