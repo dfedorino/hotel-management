@@ -13,6 +13,8 @@ security:
 booking:
   token:
     ttl: PT1H
+  demo-data:
+    enabled: ${DEMO_DATA:true}
 
 spring.cloud.openfeign.client.config.default:
   connect-timeout: 1000
