@@ -13,3 +13,33 @@ security:
 booking:
   token:
     ttl: PT1H
+
+spring.cloud.openfeign.client.config.default:
+  connect-timeout: 1000
+  read-timeout: 2000
+
+# Hotel Service calls: 3 attempts with 200ms, 400ms pauses on network errors and 5xx; 4xx answers are final.
+# The circuit opens when half of the last 10 calls failed and lets calls through again after 10s.
+resilience4j:
+  retry:
+    instances:
+      hotel-service:
+        max-attempts: 3
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - feign.RetryableException
+          - feign.FeignException$FeignServerException
+        ignore-exceptions:
+          - ru.hotel.hotelapi.error.HotelServiceClientException
+  circuitbreaker:
+    instances:
+      hotel-service:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        ignore-exceptions:
+          - ru.hotel.hotelapi.error.HotelServiceClientException

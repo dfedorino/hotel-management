@@ -43,6 +43,7 @@
         <pmd.version>7.28.0</pmd.version>
         <jacoco.version>0.8.15</jacoco.version>
         <archunit.version>1.5.0</archunit.version>
+        <wiremock.version>3.13.2</wiremock.version>
         <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
         <sonar-maven-plugin.version>5.7.0.6970</sonar-maven-plugin.version>
 
@@ -84,6 +85,11 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit-junit5</artifactId>
                 <version>${archunit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock-standalone</artifactId>
+                <version>${wiremock.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
