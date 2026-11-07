@@ -4,8 +4,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import ru.hotel.hotelservice.domain.Hotel;
-import ru.hotel.hotelservice.dto.HotelRequest;
-import ru.hotel.hotelservice.dto.HotelResponse;
+import ru.hotel.hotelapi.model.HotelRequest;
+import ru.hotel.hotelapi.model.HotelResponse;
 
 @Mapper
 public interface HotelMapper {

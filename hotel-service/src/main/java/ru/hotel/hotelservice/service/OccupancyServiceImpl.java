@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.hotel.hotelservice.domain.Room;
 import ru.hotel.hotelservice.domain.RoomReservation;
 import ru.hotel.hotelservice.dto.OccupancyQuery;
-import ru.hotel.hotelservice.dto.OccupancyReport;
-import ru.hotel.hotelservice.dto.RoomOccupancy;
+import ru.hotel.hotelapi.model.OccupancyReport;
+import ru.hotel.hotelapi.model.RoomOccupancy;
 import ru.hotel.hotelservice.repository.RoomRepository;
 import ru.hotel.hotelservice.repository.RoomReservationRepository;
 
@@ -33,6 +33,7 @@ public class OccupancyServiceImpl implements OccupancyService {
     public OccupancyReport report(OccupancyQuery query) {
         LocalDate start = query.startDate();
         LocalDate end = query.endDate();
+        Periods.requireStartBeforeEnd(start, end);
         long periodNights = DAYS.between(start, end);
         List<Room> rooms = roomRepository.findAllInHotel(query.hotelId(), Sort.by("id"));
         Map<Long, Long> nightsByRoom = reservationRepository.findActiveOverlapping(query.hotelId(), start, end)
@@ -42,7 +43,7 @@ public class OccupancyServiceImpl implements OccupancyService {
         List<RoomOccupancy> occupancies = rooms.stream()
                 .map(room -> occupancy(room, nightsByRoom.getOrDefault(room.getId(), 0L), periodNights))
                 .toList();
-        double average = occupancies.stream().mapToDouble(RoomOccupancy::occupancyRate).average().orElse(0.0);
+        double average = occupancies.stream().mapToDouble(RoomOccupancy::getOccupancyRate).average().orElse(0.0);
         return new OccupancyReport(start, end, periodNights, rooms.size(), round(average), occupancies);
     }
 

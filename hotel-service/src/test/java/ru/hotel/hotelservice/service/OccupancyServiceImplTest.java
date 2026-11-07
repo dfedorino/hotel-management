@@ -1,6 +1,7 @@
 package ru.hotel.hotelservice.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
 import java.time.LocalDate;
@@ -15,8 +16,9 @@ import ru.hotel.hotelservice.domain.Hotel;
 import ru.hotel.hotelservice.domain.Room;
 import ru.hotel.hotelservice.domain.RoomReservation;
 import ru.hotel.hotelservice.dto.OccupancyQuery;
-import ru.hotel.hotelservice.dto.OccupancyReport;
-import ru.hotel.hotelservice.dto.RoomOccupancy;
+import ru.hotel.hotelservice.exception.BadRequestException;
+import ru.hotel.hotelapi.model.OccupancyReport;
+import ru.hotel.hotelapi.model.RoomOccupancy;
 import ru.hotel.hotelservice.repository.RoomRepository;
 import ru.hotel.hotelservice.repository.RoomReservationRepository;
 
@@ -58,12 +60,12 @@ class OccupancyServiceImplTest {
         OccupancyReport report = occupancyService.report(new OccupancyQuery(1L, START, END));
 
         // then
-        assertThat(report.periodNights()).isEqualTo(10);
-        assertThat(report.totalRooms()).isEqualTo(2);
-        assertThat(report.rooms()).containsExactly(
-                new RoomOccupancy(10L, 1L, "101", 2, 5, 0.5),
-                new RoomOccupancy(11L, 1L, "102", 0, 0, 0.0));
-        assertThat(report.averageOccupancy()).isEqualTo(0.25);
+        assertThat(report.getPeriodNights()).isEqualTo(10L);
+        assertThat(report.getTotalRooms()).isEqualTo(2);
+        assertThat(report.getRooms()).containsExactly(
+                new RoomOccupancy(10L, 1L, "101", 2, 5L, 0.5),
+                new RoomOccupancy(11L, 1L, "102", 0, 0L, 0.0));
+        assertThat(report.getAverageOccupancy()).isEqualTo(0.25);
     }
 
     @Test
@@ -76,8 +78,16 @@ class OccupancyServiceImplTest {
         OccupancyReport report = occupancyService.report(new OccupancyQuery(null, START, END));
 
         // then
-        assertThat(report.totalRooms()).isZero();
-        assertThat(report.averageOccupancy()).isZero();
+        assertThat(report.getTotalRooms()).isZero();
+        assertThat(report.getAverageOccupancy()).isZero();
+    }
+
+    @Test
+    void rejectsPeriodWhereStartIsNotBeforeEnd() {
+        // when / then
+        assertThatThrownBy(() -> occupancyService.report(new OccupancyQuery(null, END, START)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("startDate must be before endDate");
     }
 
     private static Room room(Hotel hotel, Long id, String number, int timesBooked) {

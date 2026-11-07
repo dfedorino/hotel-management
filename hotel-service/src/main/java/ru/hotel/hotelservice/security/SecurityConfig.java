@@ -22,7 +22,8 @@ import org.springframework.security.web.SecurityFilterChain;
  * Endpoint-level role checks live in {@code @PreAuthorize} on controllers.
  */
 @Configuration
-@EnableMethodSecurity
+// Class proxies keep @RestController visible on controllers that implement generated API interfaces.
+@EnableMethodSecurity(proxyTargetClass = true)
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 

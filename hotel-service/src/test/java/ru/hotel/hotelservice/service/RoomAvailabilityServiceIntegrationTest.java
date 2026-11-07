@@ -19,9 +19,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import ru.hotel.hotelservice.domain.Hotel;
 import ru.hotel.hotelservice.domain.ReservationStatus;
 import ru.hotel.hotelservice.domain.Room;
-import ru.hotel.hotelservice.dto.AvailabilityRequest;
-import ru.hotel.hotelservice.dto.ReleaseRequest;
-import ru.hotel.hotelservice.dto.ReservationResponse;
+import ru.hotel.hotelapi.model.AvailabilityRequest;
+import ru.hotel.hotelapi.model.ReleaseRequest;
+import ru.hotel.hotelapi.model.ReservationResponse;
+import ru.hotel.hotelservice.exception.BadRequestException;
 import ru.hotel.hotelservice.exception.ConflictException;
 import ru.hotel.hotelservice.exception.NotFoundException;
 import ru.hotel.hotelservice.repository.HotelRepository;
@@ -67,8 +68,8 @@ class RoomAvailabilityServiceIntegrationTest {
         ReservationResponse response = availabilityService.confirm(room.getId(), request("req-1", START, END));
 
         // then
-        assertThat(response.status()).isEqualTo(ReservationStatus.ACTIVE);
-        assertThat(response.roomId()).isEqualTo(room.getId());
+        assertThat(response.getStatus()).isEqualTo(ru.hotel.hotelapi.model.ReservationStatus.ACTIVE);
+        assertThat(response.getRoomId()).isEqualTo(room.getId());
         assertThat(timesBooked()).isEqualTo(1);
     }
 
@@ -131,6 +132,15 @@ class RoomAvailabilityServiceIntegrationTest {
         // when / then
         assertThatThrownBy(() -> availabilityService.confirm(room.getId(), request("req-1", START, END)))
                 .isInstanceOf(ConflictException.class);
+    }
+
+    @Test
+    void confirmRejectsStartNotBeforeEnd() {
+        // when / then
+        assertThatThrownBy(() -> availabilityService.confirm(room.getId(), request("req-1", END, END)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("startDate must be before endDate");
+        assertThat(reservationRepository.count()).isZero();
     }
 
     @Test

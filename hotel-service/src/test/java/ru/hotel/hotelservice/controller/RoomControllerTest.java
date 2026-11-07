@@ -20,8 +20,8 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.hotel.hotelservice.dto.RoomRequest;
-import ru.hotel.hotelservice.dto.RoomResponse;
+import ru.hotel.hotelapi.model.RoomRequest;
+import ru.hotel.hotelapi.model.RoomResponse;
 import ru.hotel.hotelservice.dto.RoomSearch;
 import ru.hotel.hotelservice.exception.BadRequestException;
 import ru.hotel.hotelservice.exception.ConflictException;
@@ -94,7 +94,7 @@ class RoomControllerTest {
     @Test
     void updateReturnsUpdatedRoom() throws Exception {
         // given
-        RoomRequest request = new RoomRequest(1L, "101", false);
+        RoomRequest request = new RoomRequest(1L, "101").available(false);
         given(roomService.update(5L, request)).willReturn(new RoomResponse(5L, 1L, "101", false, 3));
 
         // when / then

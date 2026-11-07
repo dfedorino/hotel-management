@@ -1,8 +1,8 @@
 package ru.hotel.hotelservice.service;
 
-import ru.hotel.hotelservice.dto.AvailabilityRequest;
-import ru.hotel.hotelservice.dto.ReleaseRequest;
-import ru.hotel.hotelservice.dto.ReservationResponse;
+import ru.hotel.hotelapi.model.AvailabilityRequest;
+import ru.hotel.hotelapi.model.ReleaseRequest;
+import ru.hotel.hotelapi.model.ReservationResponse;
 
 /**
  * Saga participant: holds and releases room slots for Booking Service.

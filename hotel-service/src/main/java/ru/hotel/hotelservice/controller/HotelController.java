@@ -1,59 +1,50 @@
 package ru.hotel.hotelservice.controller;
 
-import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.hotel.hotelservice.dto.HotelRequest;
-import ru.hotel.hotelservice.dto.HotelResponse;
+import ru.hotel.hotelapi.api.HotelsApi;
+import ru.hotel.hotelapi.model.HotelRequest;
+import ru.hotel.hotelapi.model.HotelResponse;
 import ru.hotel.hotelservice.service.HotelService;
 
 @RestController
-@RequestMapping("/api/hotels")
 @RequiredArgsConstructor
-public class HotelController {
+public class HotelController implements HotelsApi {
 
     private final HotelService hotelService;
 
+    @Override
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public HotelResponse create(@Valid @RequestBody HotelRequest request) {
-        return hotelService.create(request);
+    public ResponseEntity<HotelResponse> createHotel(HotelRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(hotelService.create(request));
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @GetMapping
-    public List<HotelResponse> findAll() {
-        return hotelService.findAll();
+    public ResponseEntity<List<HotelResponse>> listHotels() {
+        return ResponseEntity.ok(hotelService.findAll());
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @GetMapping("/{id}")
-    public HotelResponse findById(@PathVariable Long id) {
-        return hotelService.findById(id);
+    public ResponseEntity<HotelResponse> getHotel(Long id) {
+        return ResponseEntity.ok(hotelService.findById(id));
     }
 
+    @Override
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
-    public HotelResponse update(@PathVariable Long id, @Valid @RequestBody HotelRequest request) {
-        return hotelService.update(id, request);
+    public ResponseEntity<HotelResponse> updateHotel(Long id, HotelRequest request) {
+        return ResponseEntity.ok(hotelService.update(id, request));
     }
 
+    @Override
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteHotel(Long id) {
         hotelService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

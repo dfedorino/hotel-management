@@ -1,8 +1,8 @@
 package ru.hotel.hotelservice.service;
 
 import java.util.List;
-import ru.hotel.hotelservice.dto.HotelRequest;
-import ru.hotel.hotelservice.dto.HotelResponse;
+import ru.hotel.hotelapi.model.HotelRequest;
+import ru.hotel.hotelapi.model.HotelResponse;
 
 public interface HotelService {
 

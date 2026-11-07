@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.hotel.hotelservice.domain.Hotel;
 import ru.hotel.hotelservice.domain.Room;
-import ru.hotel.hotelservice.dto.RoomRequest;
-import ru.hotel.hotelservice.dto.RoomResponse;
+import ru.hotel.hotelapi.model.RoomRequest;
+import ru.hotel.hotelapi.model.RoomResponse;
 import ru.hotel.hotelservice.dto.RoomSearch;
 import ru.hotel.hotelservice.exception.BadRequestException;
 import ru.hotel.hotelservice.exception.ConflictException;
@@ -52,19 +52,19 @@ public class RoomServiceImpl implements RoomService {
         if ((search.startDate() == null) != (search.endDate() == null)) {
             throw new BadRequestException("startDate and endDate must be given together");
         }
-        if (search.hasDates() && !search.startDate().isBefore(search.endDate())) {
-            throw new BadRequestException("startDate must be before endDate");
+        if (search.hasDates()) {
+            Periods.requireStartBeforeEnd(search.startDate(), search.endDate());
         }
     }
 
     @Override
     @Transactional
     public RoomResponse create(RoomRequest request) {
-        Hotel hotel = getHotel(request.hotelId());
-        if (roomRepository.existsByHotelIdAndNumber(hotel.getId(), request.number())) {
+        Hotel hotel = getHotel(request.getHotelId());
+        if (roomRepository.existsByHotelIdAndNumber(hotel.getId(), request.getNumber())) {
             throw duplicate(request);
         }
-        Room room = new Room(hotel, request.number());
+        Room room = new Room(hotel, request.getNumber());
         applyAvailability(room, request);
         return roomMapper.toResponse(roomRepository.save(room));
     }
@@ -79,12 +79,12 @@ public class RoomServiceImpl implements RoomService {
     @Transactional
     public RoomResponse update(Long id, RoomRequest request) {
         Room room = getRoom(id);
-        Hotel hotel = getHotel(request.hotelId());
-        if (roomRepository.existsByHotelIdAndNumberAndIdNot(hotel.getId(), request.number(), id)) {
+        Hotel hotel = getHotel(request.getHotelId());
+        if (roomRepository.existsByHotelIdAndNumberAndIdNot(hotel.getId(), request.getNumber(), id)) {
             throw duplicate(request);
         }
         room.setHotel(hotel);
-        room.setNumber(request.number());
+        room.setNumber(request.getNumber());
         applyAvailability(room, request);
         return roomMapper.toResponse(room);
     }
@@ -99,8 +99,8 @@ public class RoomServiceImpl implements RoomService {
     }
 
     private static void applyAvailability(Room room, RoomRequest request) {
-        if (request.available() != null) {
-            room.setAvailable(request.available());
+        if (request.getAvailable() != null) {
+            room.setAvailable(request.getAvailable());
         }
     }
 
@@ -114,6 +114,6 @@ public class RoomServiceImpl implements RoomService {
 
     private static ConflictException duplicate(RoomRequest request) {
         return new ConflictException(
-                "Room " + request.number() + " already exists in hotel " + request.hotelId());
+                "Room " + request.getNumber() + " already exists in hotel " + request.getHotelId());
     }
 }

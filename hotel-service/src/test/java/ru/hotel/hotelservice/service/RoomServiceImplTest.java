@@ -19,8 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import ru.hotel.hotelservice.domain.Hotel;
 import ru.hotel.hotelservice.domain.Room;
-import ru.hotel.hotelservice.dto.RoomRequest;
-import ru.hotel.hotelservice.dto.RoomResponse;
+import ru.hotel.hotelapi.model.RoomRequest;
+import ru.hotel.hotelapi.model.RoomResponse;
 import ru.hotel.hotelservice.dto.RoomSearch;
 import ru.hotel.hotelservice.exception.BadRequestException;
 import ru.hotel.hotelservice.exception.ConflictException;
@@ -64,7 +64,7 @@ class RoomServiceImplTest {
         });
 
         // when
-        RoomResponse response = roomService.create(new RoomRequest(1L, "101", null));
+        RoomResponse response = roomService.create(new RoomRequest(1L, "101"));
 
         // then
         assertThat(response).isEqualTo(new RoomResponse(5L, 1L, "101", true, 0));
@@ -76,7 +76,7 @@ class RoomServiceImplTest {
         given(hotelRepository.findById(1L)).willReturn(Optional.empty());
 
         // when / then
-        assertThatThrownBy(() -> roomService.create(new RoomRequest(1L, "101", true)))
+        assertThatThrownBy(() -> roomService.create(new RoomRequest(1L, "101").available(true)))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Hotel 1 not found");
     }
@@ -88,7 +88,7 @@ class RoomServiceImplTest {
         given(roomRepository.existsByHotelIdAndNumber(1L, "101")).willReturn(true);
 
         // when / then
-        assertThatThrownBy(() -> roomService.create(new RoomRequest(1L, "101", true)))
+        assertThatThrownBy(() -> roomService.create(new RoomRequest(1L, "101").available(true)))
                 .isInstanceOf(ConflictException.class);
         verify(roomRepository, never()).save(any());
     }
@@ -103,7 +103,7 @@ class RoomServiceImplTest {
         given(hotelRepository.findById(1L)).willReturn(Optional.of(hotel));
 
         // when
-        RoomResponse response = roomService.update(5L, new RoomRequest(1L, "102", false));
+        RoomResponse response = roomService.update(5L, new RoomRequest(1L, "102").available(false));
 
         // then
         assertThat(response).isEqualTo(new RoomResponse(5L, 1L, "102", false, 3));
@@ -119,7 +119,7 @@ class RoomServiceImplTest {
         List<RoomResponse> rooms = roomService.findFree(new RoomSearch(1L, START, END));
 
         // then
-        assertThat(rooms).extracting(RoomResponse::number).containsExactly("101");
+        assertThat(rooms).extracting(RoomResponse::getNumber).containsExactly("101");
     }
 
     @Test

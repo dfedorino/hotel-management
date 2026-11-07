@@ -17,9 +17,9 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.hotel.hotelservice.domain.ReservationStatus;
-import ru.hotel.hotelservice.dto.ReleaseRequest;
-import ru.hotel.hotelservice.dto.ReservationResponse;
+import ru.hotel.hotelapi.model.ReservationStatus;
+import ru.hotel.hotelapi.model.ReleaseRequest;
+import ru.hotel.hotelapi.model.ReservationResponse;
 import ru.hotel.hotelservice.exception.ConflictException;
 import ru.hotel.hotelservice.security.SecurityConfig;
 import ru.hotel.hotelservice.service.RoomAvailabilityService;
@@ -77,19 +77,6 @@ class RoomAvailabilityControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("requestId")));
-    }
-
-    @Test
-    void confirmReturns400WhenStartIsNotBeforeEnd() throws Exception {
-        // given
-        String body = """
-                {"requestId": "req-1", "bookingId": 100, "startDate": "2027-01-15", "endDate": "2027-01-15"}
-                """;
-
-        // when / then
-        mockMvc.perform(post("/api/rooms/5/confirm-availability")
-                        .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isBadRequest());
     }
 
     @Test

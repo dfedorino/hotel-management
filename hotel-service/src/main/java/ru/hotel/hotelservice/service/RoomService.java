@@ -1,8 +1,8 @@
 package ru.hotel.hotelservice.service;
 
 import java.util.List;
-import ru.hotel.hotelservice.dto.RoomRequest;
-import ru.hotel.hotelservice.dto.RoomResponse;
+import ru.hotel.hotelapi.model.RoomRequest;
+import ru.hotel.hotelapi.model.RoomResponse;
 import ru.hotel.hotelservice.dto.RoomSearch;
 
 public interface RoomService {
