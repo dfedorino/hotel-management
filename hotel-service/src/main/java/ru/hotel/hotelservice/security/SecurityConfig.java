@@ -45,6 +45,8 @@ public class SecurityConfig {
             SecurityErrorHandler errorHandler,
             @Value("${hotel.api-docs.enabled}") boolean apiDocsEnabled)
             throws Exception {
+        // CSRF needs credentials the browser attaches by itself (cookies, sessions). Here the only credential is a
+        // bearer JWT in the Authorization header, which a browser never sends implicitly, and no session exists.
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {

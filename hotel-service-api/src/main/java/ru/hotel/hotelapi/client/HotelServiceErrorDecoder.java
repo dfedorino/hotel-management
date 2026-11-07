@@ -8,6 +8,7 @@ import feign.codec.ErrorDecoder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import lombok.extern.slf4j.Slf4j;
 import ru.hotel.hotelapi.error.HotelServiceBadRequestException;
 import ru.hotel.hotelapi.error.HotelServiceConflictException;
@@ -45,7 +46,7 @@ public class HotelServiceErrorDecoder implements ErrorDecoder {
             }
         }
         return new ErrorResponse(
-                OffsetDateTime.now(),
+                OffsetDateTime.now(ZoneOffset.UTC),
                 response.status(),
                 response.reason(),
                 "Hotel Service responded with status " + response.status(),

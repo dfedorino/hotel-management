@@ -93,9 +93,11 @@ class RoomAvailabilityServiceIntegrationTest {
         // given
         availabilityService.confirm(room.getId(), request("req-1", START, END));
 
+        Long roomId = room.getId();
+        AvailabilityRequest otherDates = request("req-1", START.plusDays(10), END.plusDays(10));
+
         // when / then
-        assertThatThrownBy(() -> availabilityService.confirm(
-                        room.getId(), request("req-1", START.plusDays(10), END.plusDays(10))))
+        assertThatThrownBy(() -> availabilityService.confirm(roomId, otherDates))
                 .isInstanceOf(ConflictException.class);
     }
 
@@ -104,9 +106,11 @@ class RoomAvailabilityServiceIntegrationTest {
         // given
         availabilityService.confirm(room.getId(), request("req-1", START, END));
 
+        Long roomId = room.getId();
+        AvailabilityRequest overlapping = request("req-2", START.plusDays(1), END.plusDays(1));
+
         // when / then
-        assertThatThrownBy(() ->
-                        availabilityService.confirm(room.getId(), request("req-2", START.plusDays(1), END.plusDays(1))))
+        assertThatThrownBy(() -> availabilityService.confirm(roomId, overlapping))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("not available");
         assertThat(timesBooked()).isEqualTo(1);
@@ -130,15 +134,21 @@ class RoomAvailabilityServiceIntegrationTest {
         room.setAvailable(false);
         roomRepository.save(room);
 
+        Long roomId = room.getId();
+        AvailabilityRequest request = request("req-1", START, END);
+
         // when / then
-        assertThatThrownBy(() -> availabilityService.confirm(room.getId(), request("req-1", START, END)))
-                .isInstanceOf(ConflictException.class);
+        assertThatThrownBy(() -> availabilityService.confirm(roomId, request)).isInstanceOf(ConflictException.class);
     }
 
     @Test
     void confirmRejectsStartNotBeforeEnd() {
+        // given
+        Long roomId = room.getId();
+        AvailabilityRequest emptyPeriod = request("req-1", END, END);
+
         // when / then
-        assertThatThrownBy(() -> availabilityService.confirm(room.getId(), request("req-1", END, END)))
+        assertThatThrownBy(() -> availabilityService.confirm(roomId, emptyPeriod))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("startDate must be before endDate");
         assertThat(reservationRepository.count()).isZero();
@@ -146,9 +156,11 @@ class RoomAvailabilityServiceIntegrationTest {
 
     @Test
     void confirmFailsForMissingRoom() {
+        // given
+        AvailabilityRequest request = request("req-1", START, END);
+
         // when / then
-        assertThatThrownBy(() -> availabilityService.confirm(-1L, request("req-1", START, END)))
-                .isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> availabilityService.confirm(-1L, request)).isInstanceOf(NotFoundException.class);
     }
 
     @Test

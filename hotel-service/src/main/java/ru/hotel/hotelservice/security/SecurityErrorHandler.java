@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -37,7 +38,11 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         ErrorResponse body = new ErrorResponse(
-                OffsetDateTime.now(), status.value(), status.getReasonPhrase(), message, request.getRequestURI());
+                OffsetDateTime.now(ZoneOffset.UTC),
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                request.getRequestURI());
         objectMapper.writeValue(response.getOutputStream(), body);
     }
 }

@@ -2,6 +2,7 @@ package ru.hotel.hotelservice.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -99,7 +100,11 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, HttpServletRequest request) {
         ErrorResponse body = new ErrorResponse(
-                OffsetDateTime.now(), status.value(), status.getReasonPhrase(), message, request.getRequestURI());
+                OffsetDateTime.now(ZoneOffset.UTC),
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                request.getRequestURI());
         return ResponseEntity.status(status).body(body);
     }
 }

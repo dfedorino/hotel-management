@@ -85,8 +85,11 @@ class OccupancyServiceImplTest {
 
     @Test
     void rejectsPeriodWhereStartIsNotBeforeEnd() {
+        // given
+        OccupancyQuery reversed = new OccupancyQuery(null, END, START);
+
         // when / then
-        assertThatThrownBy(() -> occupancyService.report(new OccupancyQuery(null, END, START)))
+        assertThatThrownBy(() -> occupancyService.report(reversed))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("startDate must be before endDate");
     }

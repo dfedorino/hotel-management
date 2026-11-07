@@ -75,8 +75,10 @@ class RoomServiceImplTest {
         // given
         given(hotelRepository.findById(1L)).willReturn(Optional.empty());
 
+        RoomRequest request = new RoomRequest(1L, "101").available(true);
+
         // when / then
-        assertThatThrownBy(() -> roomService.create(new RoomRequest(1L, "101").available(true)))
+        assertThatThrownBy(() -> roomService.create(request))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Hotel 1 not found");
     }
@@ -87,9 +89,10 @@ class RoomServiceImplTest {
         given(hotelRepository.findById(1L)).willReturn(Optional.of(hotel));
         given(roomRepository.existsByHotelIdAndNumber(1L, "101")).willReturn(true);
 
+        RoomRequest request = new RoomRequest(1L, "101").available(true);
+
         // when / then
-        assertThatThrownBy(() -> roomService.create(new RoomRequest(1L, "101").available(true)))
-                .isInstanceOf(ConflictException.class);
+        assertThatThrownBy(() -> roomService.create(request)).isInstanceOf(ConflictException.class);
         verify(roomRepository, never()).save(any());
     }
 
@@ -149,18 +152,24 @@ class RoomServiceImplTest {
 
     @Test
     void searchRejectsStartNotBeforeEnd() {
+        // given
+        RoomSearch reversed = new RoomSearch(null, END, START);
+        RoomSearch emptyPeriod = new RoomSearch(null, START, START);
+
         // when / then
-        assertThatThrownBy(() -> roomService.findFree(new RoomSearch(null, END, START)))
+        assertThatThrownBy(() -> roomService.findFree(reversed))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("startDate must be before endDate");
-        assertThatThrownBy(() -> roomService.findRecommended(new RoomSearch(null, START, START)))
-                .isInstanceOf(BadRequestException.class);
+        assertThatThrownBy(() -> roomService.findRecommended(emptyPeriod)).isInstanceOf(BadRequestException.class);
     }
 
     @Test
     void searchRejectsOnlyOneDate() {
+        // given
+        RoomSearch onlyStart = new RoomSearch(null, START, null);
+
         // when / then
-        assertThatThrownBy(() -> roomService.findFree(new RoomSearch(null, START, null)))
+        assertThatThrownBy(() -> roomService.findFree(onlyStart))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("startDate and endDate must be given together");
     }
