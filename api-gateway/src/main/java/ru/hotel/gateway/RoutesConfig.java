@@ -50,8 +50,9 @@ public class RoutesConfig {
     /** {@code lb://name} goes through Eureka and the load balancer; any other URI is called directly. */
     private static RouterFunctions.Builder toBackend(RouterFunctions.Builder builder, String location) {
         URI backend = URI.create(location);
-        return LOAD_BALANCED.equals(backend.getScheme())
+        RouterFunctions.Builder routed = LOAD_BALANCED.equals(backend.getScheme())
                 ? builder.filter(lb(backend.getHost()))
                 : builder.before(uri(backend));
+        return routed.filter(new UnreachableServiceFilter());
     }
 }
