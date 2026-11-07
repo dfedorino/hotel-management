@@ -1,6 +1,7 @@
 package ru.hotel.bookingservice.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -45,6 +46,39 @@ class AuthAndUsersIntegrationTest {
     void tearDown() {
         bookingRepository.deleteAll();
         userRepository.deleteAll();
+    }
+
+    @Test
+    void adminListsAndViewsUsers() throws Exception {
+        // given
+        User root = userRepository.save(new User("root", passwordEncoder.encode("root-pass-1"), Role.ADMIN));
+        User bob = userRepository.save(new User("bob", "hash", Role.USER));
+        String adminToken = login("root", "root-pass-1");
+
+        // when / then
+        mockMvc.perform(get("/api/bookings/users")
+                        .param("size", "1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].username").value(root.getUsername()))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.content[0].password").doesNotExist());
+        mockMvc.perform(get("/api/bookings/users/" + bob.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("bob"))
+                .andExpect(jsonPath("$.role").value("USER"));
+    }
+
+    @Test
+    void userCannotListUsers() throws Exception {
+        // given
+        String userToken = register("alice");
+
+        // when / then
+        mockMvc.perform(get("/api/bookings/users").header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken))
+                .andExpect(status().isForbidden());
     }
 
     @Test

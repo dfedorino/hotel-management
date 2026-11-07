@@ -7,6 +7,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import ru.hotel.bookingapi.model.UserCreateRequest;
+import ru.hotel.bookingapi.model.UserPage;
 import ru.hotel.bookingapi.model.UserResponse;
 import ru.hotel.bookingapi.model.UserUpdateRequest;
 import ru.hotel.bookingservice.domain.Role;
@@ -94,6 +99,34 @@ class UserServiceImplTest {
         // when / then
         assertThatThrownBy(() -> userService.update(3L, request)).isInstanceOf(ConflictException.class);
         assertThat(user.getUsername()).isEqualTo("bob");
+    }
+
+    @Test
+    void findAllReturnsPageOfUsersOrderedById() {
+        // given
+        User bob = new User("bob", "hash", Role.USER);
+        bob.setId(3L);
+        PageRequest pageRequest = PageRequest.of(0, 2, Sort.by("id"));
+        given(userRepository.findAll(pageRequest)).willReturn(new PageImpl<>(List.of(bob), pageRequest, 3));
+
+        // when
+        UserPage page = userService.findAll(0, 2);
+
+        // then
+        assertThat(page.getContent()).containsExactly(new UserResponse(3L, "bob", ru.hotel.bookingapi.model.Role.USER));
+        assertThat(page.getTotalElements()).isEqualTo(3L);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+    }
+
+    @Test
+    void findByIdFailsForMissingUser() {
+        // given
+        given(userRepository.findById(42L)).willReturn(Optional.empty());
+
+        // when / then
+        assertThatThrownBy(() -> userService.findById(42L))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("User 42 not found");
     }
 
     @Test

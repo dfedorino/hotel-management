@@ -59,6 +59,23 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /api/bookings/users:
+    get:
+      tags: [users]
+      operationId: listUsers
+      description: All users ordered by id.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Page of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
     post:
       tags: [users]
       operationId: createUser
@@ -83,6 +100,18 @@ paths:
   /api/bookings/users/{id}:
     parameters:
       - $ref: '#/components/parameters/Id'
+    get:
+      tags: [users]
+      operationId: getUser
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
     patch:
       tags: [users]
       operationId: updateUser
@@ -121,14 +150,8 @@ paths:
       operationId: listBookings
       description: Bookings of the current user, newest first.
       parameters:
-        - name: page
-          in: query
-          required: false
-          schema: { type: integer, minimum: 0, default: 0 }
-        - name: size
-          in: query
-          required: false
-          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
       responses:
         '200':
           description: Page of bookings
@@ -201,6 +224,17 @@ components:
       in: path
       required: true
       schema: { type: integer, format: int64 }
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Zero-based page number.
+      schema: { type: integer, minimum: 0, default: 0 }
+    Size:
+      name: size
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
 
   responses:
     BadRequest:
@@ -289,6 +323,19 @@ components:
         id: { type: integer, format: int64 }
         username: { type: string }
         role: { $ref: '#/components/schemas/Role' }
+
+    UserPage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
 
     BookingStatus:
       type: string
