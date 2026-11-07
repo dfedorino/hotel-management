@@ -23,7 +23,20 @@ security:
     # Must match Hotel Service; override with JWT_SECRET outside local development.
     secret: ${JWT_SECRET:local-dev-secret-change-me-0123456789abcdef}
 
+springdoc:
+  api-docs:
+    # Required for /v3/api-docs/swagger-config; the code-derived spec itself is denied in SecurityConfig,
+    # so the contract file stays the only published spec.
+    enabled: ${booking.api-docs.enabled}
+  swagger-ui:
+    enabled: ${booking.api-docs.enabled}
+    url: /openapi/booking-service.yaml
+    query-config-enabled: false
+
 booking:
+  api-docs:
+    # Turn off outside local development: hides the contract, Swagger UI and its config.
+    enabled: ${API_DOCS_ENABLED:true}
   token:
     ttl: PT1H
   demo-data:
