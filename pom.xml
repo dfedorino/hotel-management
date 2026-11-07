@@ -40,6 +40,7 @@
         <maven-pmd-plugin.version>3.27.0</maven-pmd-plugin.version>
         <pmd.version>7.28.0</pmd.version>
         <jacoco.version>0.8.15</jacoco.version>
+        <archunit.version>1.5.0</archunit.version>
         <jacoco.line.minimum>0.85</jacoco.line.minimum>
         <jacoco.branch.minimum>0.75</jacoco.branch.minimum>
     </properties>
@@ -62,6 +63,11 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                 <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
