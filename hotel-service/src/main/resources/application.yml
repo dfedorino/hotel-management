@@ -19,10 +19,19 @@ management:
         include: health,info
 
 springdoc:
+  api-docs:
+    # Required for /v3/api-docs/swagger-config; the code-derived spec itself is denied in SecurityConfig,
+    # so the contract file stays the only published spec.
+    enabled: ${hotel.api-docs.enabled}
   swagger-ui:
+    enabled: ${hotel.api-docs.enabled}
     url: /openapi/hotel-service.yaml
+    query-config-enabled: false
 
 hotel:
+  api-docs:
+    # Turn off outside local development: hides the contract, Swagger UI and its config.
+    enabled: ${API_DOCS_ENABLED:true}
   demo-data:
     enabled: ${DEMO_DATA:true}
 

@@ -10,10 +10,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.hotel.hotelservice.security.TestTokens;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@TestPropertySource(properties = {"hotel.api-docs.enabled=true", "security.jwt.secret=" + TestTokens.SECRET})
 class ApiDocumentationIntegrationTest {
 
     @Autowired
@@ -35,5 +39,15 @@ class ApiDocumentationIntegrationTest {
                 .andExpect(jsonPath("$.url").value("/openapi/hotel-service.yaml"));
         mockMvc.perform(get("/swagger-ui/index.html"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void specDerivedFromCodeIsNotPublished() throws Exception {
+        // when / then
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/v3/api-docs")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + TestTokens.token("root", "ADMIN")))
+                .andExpect(status().isForbidden());
     }
 }

@@ -1,5 +1,6 @@
 package ru.hotel.hotelservice.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -9,6 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * re-derived from code.
  */
 @Configuration
+@ConditionalOnProperty(name = "hotel.api-docs.enabled", havingValue = "true")
 public class ApiContractConfig implements WebMvcConfigurer {
 
     @Override

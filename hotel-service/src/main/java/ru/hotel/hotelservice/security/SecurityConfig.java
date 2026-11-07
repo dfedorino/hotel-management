@@ -3,6 +3,7 @@ package ru.hotel.hotelservice.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import javax.crypto.spec.SecretKeySpec;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,18 +28,35 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_PATHS = {
-        "/openapi/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health"
+    private static final String HEALTH_PATH = "/actuator/health";
+
+    /**
+     * Exactly what Swagger UI needs: the contract file, the UI assets and the UI config.
+     */
+    private static final String[] API_DOCS_PATHS = {
+        "/openapi/hotel-service.yaml", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/swagger-config"
     };
 
+    /**
+     * Spec that springdoc derives from code; the contract file is published instead.
+     */
+    private static final String[] GENERATED_SPEC_PATHS = {"/v3/api-docs", "/v3/api-docs/**"};
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityErrorHandler errorHandler)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            SecurityErrorHandler errorHandler,
+            @Value("${hotel.api-docs.enabled}") boolean apiDocsEnabled) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PUBLIC_PATHS).permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HEALTH_PATH).permitAll();
+                    if (apiDocsEnabled) {
+                        auth.requestMatchers(API_DOCS_PATHS).permitAll();
+                        auth.requestMatchers(GENERATED_SPEC_PATHS).denyAll();
+                    }
+                    auth.anyRequest().authenticated();
+                })
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(errorHandler)
