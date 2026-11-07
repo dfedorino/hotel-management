@@ -17,9 +17,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.hotel.hotelservice.domain.Hotel;
 import ru.hotel.hotelservice.dto.HotelRequest;
 import ru.hotel.hotelservice.dto.HotelResponse;
+import ru.hotel.hotelservice.exception.ConflictException;
 import ru.hotel.hotelservice.exception.NotFoundException;
 import ru.hotel.hotelservice.mapper.HotelMapper;
 import ru.hotel.hotelservice.repository.HotelRepository;
+import ru.hotel.hotelservice.repository.RoomRepository;
 
 @ExtendWith(MockitoExtension.class)
 class HotelServiceImplTest {
@@ -27,11 +29,14 @@ class HotelServiceImplTest {
     @Mock
     private HotelRepository hotelRepository;
 
+    @Mock
+    private RoomRepository roomRepository;
+
     private HotelServiceImpl hotelService;
 
     @BeforeEach
     void setUp() {
-        hotelService = new HotelServiceImpl(hotelRepository, Mappers.getMapper(HotelMapper.class));
+        hotelService = new HotelServiceImpl(hotelRepository, roomRepository, Mappers.getMapper(HotelMapper.class));
     }
 
     @Test
@@ -82,6 +87,19 @@ class HotelServiceImplTest {
 
         // when / then
         assertThatThrownBy(() -> hotelService.delete(42L)).isInstanceOf(NotFoundException.class);
+        verify(hotelRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteThrowsConflictWhenHotelHasRooms() {
+        // given
+        given(hotelRepository.existsById(1L)).willReturn(true);
+        given(roomRepository.existsByHotelId(1L)).willReturn(true);
+
+        // when / then
+        assertThatThrownBy(() -> hotelService.delete(1L))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("Hotel 1 has rooms and cannot be deleted");
         verify(hotelRepository, never()).deleteById(any());
     }
 }

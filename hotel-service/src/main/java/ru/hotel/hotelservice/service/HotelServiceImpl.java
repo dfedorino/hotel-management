@@ -7,15 +7,18 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.hotel.hotelservice.domain.Hotel;
 import ru.hotel.hotelservice.dto.HotelRequest;
 import ru.hotel.hotelservice.dto.HotelResponse;
+import ru.hotel.hotelservice.exception.ConflictException;
 import ru.hotel.hotelservice.exception.NotFoundException;
 import ru.hotel.hotelservice.mapper.HotelMapper;
 import ru.hotel.hotelservice.repository.HotelRepository;
+import ru.hotel.hotelservice.repository.RoomRepository;
 
 @Service
 @RequiredArgsConstructor
 public class HotelServiceImpl implements HotelService {
 
     private final HotelRepository hotelRepository;
+    private final RoomRepository roomRepository;
     private final HotelMapper hotelMapper;
 
     @Override
@@ -49,6 +52,9 @@ public class HotelServiceImpl implements HotelService {
     public void delete(Long id) {
         if (!hotelRepository.existsById(id)) {
             throw notFound(id);
+        }
+        if (roomRepository.existsByHotelId(id)) {
+            throw new ConflictException("Hotel " + id + " has rooms and cannot be deleted");
         }
         hotelRepository.deleteById(id);
     }
