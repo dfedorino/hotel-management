@@ -1,31 +1,17 @@
 package ru.hotel.hotelservice.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.nio.charset.StandardCharsets;
-import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import ru.hotel.security.jwt.JwtResourceServerConfigurer;
 
 /**
- * Stateless resource server: every request carries an HS256 JWT issued by Booking Service. Endpoint-level role checks
- * live in {@code @PreAuthorize} on controllers.
+ * Path rules of Hotel Service on top of the shared JWT resource server; role checks per endpoint live in
+ * {@code @PreAuthorize} on controllers.
  */
 @Configuration
-// Class proxies keep @RestController visible on controllers that implement generated API interfaces.
-@EnableMethodSecurity(proxyTargetClass = true)
-@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     private static final String HEALTH_PATH = "/actuator/health";
@@ -41,14 +27,8 @@ public class SecurityConfig {
     @Bean
     @SuppressWarnings("PMD.SignatureDeclareThrowsException") // HttpSecurity.build() declares Exception
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            SecurityErrorHandler errorHandler,
-            @Value("${hotel.api-docs.enabled}") boolean apiDocsEnabled)
-            throws Exception {
-        // CSRF needs credentials the browser attaches by itself (cookies, sessions). Here the only credential is a
-        // bearer JWT in the Authorization header, which a browser never sends implicitly, and no session exists.
-        http.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            HttpSecurity http, @Value("${hotel.api-docs.enabled}") boolean apiDocsEnabled) throws Exception {
+        return http.with(new JwtResourceServerConfigurer(), configurer -> {})
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HEALTH_PATH).permitAll();
                     if (apiDocsEnabled) {
@@ -57,34 +37,6 @@ public class SecurityConfig {
                     }
                     auth.anyRequest().authenticated();
                 })
-                .oauth2ResourceServer(
-                        oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                                .authenticationEntryPoint(errorHandler)
-                                .accessDeniedHandler(errorHandler))
-                .exceptionHandling(
-                        errors -> errors.authenticationEntryPoint(errorHandler).accessDeniedHandler(errorHandler));
-        return http.build();
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder(JwtProperties properties) {
-        SecretKeySpec key = new SecretKeySpec(properties.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(key)
-                .macAlgorithm(MacAlgorithm.HS256)
                 .build();
-    }
-
-    @Bean
-    public SecurityErrorHandler securityErrorHandler(ObjectMapper objectMapper) {
-        return new SecurityErrorHandler(objectMapper);
-    }
-
-    private static JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
-        authorities.setAuthoritiesClaimName("roles");
-        authorities.setAuthorityPrefix("ROLE_");
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authorities);
-        return converter;
     }
 }
