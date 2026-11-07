@@ -7,6 +7,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,10 +16,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import ru.hotel.hotelservice.domain.Hotel;
 import ru.hotel.hotelservice.domain.Room;
 import ru.hotel.hotelservice.dto.RoomRequest;
 import ru.hotel.hotelservice.dto.RoomResponse;
+import ru.hotel.hotelservice.dto.RoomSearch;
+import ru.hotel.hotelservice.exception.BadRequestException;
 import ru.hotel.hotelservice.exception.ConflictException;
 import ru.hotel.hotelservice.exception.NotFoundException;
 import ru.hotel.hotelservice.mapper.RoomMapper;
@@ -26,6 +31,9 @@ import ru.hotel.hotelservice.repository.RoomRepository;
 
 @ExtendWith(MockitoExtension.class)
 class RoomServiceImplTest {
+
+    private static final LocalDate START = LocalDate.of(2027, 1, 10);
+    private static final LocalDate END = LocalDate.of(2027, 1, 15);
 
     @Mock
     private RoomRepository roomRepository;
@@ -99,6 +107,61 @@ class RoomServiceImplTest {
 
         // then
         assertThat(response).isEqualTo(new RoomResponse(5L, 1L, "102", false, 3));
+    }
+
+    @Test
+    void findFreeWithDatesSortsById() {
+        // given
+        Room room = new Room(hotel, "101");
+        given(roomRepository.findFree(1L, START, END, Sort.by("id"))).willReturn(List.of(room));
+
+        // when
+        List<RoomResponse> rooms = roomService.findFree(new RoomSearch(1L, START, END));
+
+        // then
+        assertThat(rooms).extracting(RoomResponse::number).containsExactly("101");
+    }
+
+    @Test
+    void findRecommendedSortsByTimesBookedThenId() {
+        // given
+        given(roomRepository.findFree(null, START, END, Sort.by("timesBooked", "id"))).willReturn(List.of());
+
+        // when
+        roomService.findRecommended(new RoomSearch(null, START, END));
+
+        // then
+        verify(roomRepository).findFree(null, START, END, Sort.by("timesBooked", "id"));
+    }
+
+    @Test
+    void findFreeWithoutDatesReturnsRoomsInService() {
+        // given
+        given(roomRepository.findAvailable(null, Sort.by("id"))).willReturn(List.of());
+
+        // when
+        roomService.findFree(new RoomSearch(null, null, null));
+
+        // then
+        verify(roomRepository).findAvailable(null, Sort.by("id"));
+    }
+
+    @Test
+    void searchRejectsStartNotBeforeEnd() {
+        // when / then
+        assertThatThrownBy(() -> roomService.findFree(new RoomSearch(null, END, START)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("startDate must be before endDate");
+        assertThatThrownBy(() -> roomService.findRecommended(new RoomSearch(null, START, START)))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void searchRejectsOnlyOneDate() {
+        // when / then
+        assertThatThrownBy(() -> roomService.findFree(new RoomSearch(null, START, null)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("startDate and endDate must be given together");
     }
 
     @Test

@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -18,6 +20,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.hotel.hotelservice.dto.RoomRequest;
 import ru.hotel.hotelservice.dto.RoomResponse;
+import ru.hotel.hotelservice.dto.RoomSearch;
+import ru.hotel.hotelservice.exception.BadRequestException;
 import ru.hotel.hotelservice.exception.ConflictException;
 import ru.hotel.hotelservice.exception.NotFoundException;
 import ru.hotel.hotelservice.service.RoomService;
@@ -95,6 +99,57 @@ class RoomControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.available").value(false));
+    }
+
+    @Test
+    void listFreeReturnsRoomsForGivenDates() throws Exception {
+        // given
+        RoomSearch search = new RoomSearch(1L, LocalDate.of(2027, 1, 10), LocalDate.of(2027, 1, 15));
+        given(roomService.findFree(search)).willReturn(List.of(new RoomResponse(5L, 1L, "101", true, 0)));
+
+        // when / then
+        mockMvc.perform(get("/api/rooms")
+                        .param("hotelId", "1")
+                        .param("startDate", "2027-01-10")
+                        .param("endDate", "2027-01-15"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(5));
+    }
+
+    @Test
+    void recommendReturnsRoomsInServiceOrder() throws Exception {
+        // given
+        RoomSearch search = new RoomSearch(null, LocalDate.of(2027, 1, 10), LocalDate.of(2027, 1, 15));
+        given(roomService.findRecommended(search)).willReturn(List.of(
+                new RoomResponse(6L, 1L, "102", true, 0),
+                new RoomResponse(5L, 1L, "101", true, 2)));
+
+        // when / then
+        mockMvc.perform(get("/api/rooms/recommend")
+                        .param("startDate", "2027-01-10")
+                        .param("endDate", "2027-01-15"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(6))
+                .andExpect(jsonPath("$[1].id").value(5));
+    }
+
+    @Test
+    void listFreeReturns400WhenServiceRejectsDates() throws Exception {
+        // given
+        given(roomService.findFree(any())).willThrow(new BadRequestException("startDate must be before endDate"));
+
+        // when / then
+        mockMvc.perform(get("/api/rooms").param("startDate", "2027-01-15").param("endDate", "2027-01-10"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("startDate must be before endDate"));
+    }
+
+    @Test
+    void listFreeReturns400ForMalformedDate() throws Exception {
+        // when / then
+        mockMvc.perform(get("/api/rooms").param("startDate", "not-a-date"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test
