@@ -24,6 +24,7 @@
         <module>hotel-service-api</module>
         <module>hotel-service</module>
         <module>booking-service</module>
+        <module>api-gateway</module>
     </modules>
 
     <properties>
