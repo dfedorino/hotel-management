@@ -71,6 +71,11 @@ class JwtResourceServerAutoConfigurationTest {
         contextRunner.run(context -> assertThat(context).hasSingleBean(SecurityErrorHandler.class));
     }
 
+    @Test
+    void providesFilterChainCustomizerAsAnInjectableBean() {
+        contextRunner.run(context -> assertThat(context).hasSingleBean(JwtResourceServerCustomizer.class));
+    }
+
     private static Instant inHour() {
         return Instant.now().plus(Duration.ofHours(1));
     }

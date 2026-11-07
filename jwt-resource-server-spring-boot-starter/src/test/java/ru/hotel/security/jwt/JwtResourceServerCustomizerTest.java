@@ -24,10 +24,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootTest(
-        classes = JwtResourceServerConfigurerTest.SecuredApplication.class,
+        classes = JwtResourceServerCustomizerTest.SecuredApplication.class,
         properties = "security.jwt.secret=" + JwtTestTokens.SECRET)
 @AutoConfigureMockMvc
-class JwtResourceServerConfigurerTest {
+class JwtResourceServerCustomizerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -80,9 +80,10 @@ class JwtResourceServerConfigurerTest {
 
         @Bean
         @SuppressWarnings("PMD.SignatureDeclareThrowsException") // HttpSecurity.build() declares Exception
-        SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            return http.with(new JwtResourceServerConfigurer(), configurer -> {})
-                    .authorizeHttpRequests(auth -> auth.requestMatchers("/public")
+        SecurityFilterChain securityFilterChain(HttpSecurity http, JwtResourceServerCustomizer jwtResourceServer)
+                throws Exception {
+            jwtResourceServer.customize(http);
+            return http.authorizeHttpRequests(auth -> auth.requestMatchers("/public")
                             .permitAll()
                             .anyRequest()
                             .authenticated())

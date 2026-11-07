@@ -19,7 +19,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 /**
  * Beans every service needs to trust tokens issued by Booking Service: an HS256 decoder over the shared secret, the
  * {@code roles} claim as {@code ROLE_*} authorities, JSON 401/403 and {@code @PreAuthorize} support. Path rules stay in
- * each service, wired with {@link JwtResourceServerConfigurer}.
+ * each service, applied with {@link JwtResourceServerCustomizer}.
  */
 @AutoConfiguration(after = JacksonAutoConfiguration.class)
 @EnableConfigurationProperties(JwtProperties.class)
@@ -52,6 +52,13 @@ public class JwtResourceServerAutoConfiguration {
     @ConditionalOnMissingBean
     public SecurityErrorHandler securityErrorHandler(ObjectMapper objectMapper) {
         return new SecurityErrorHandler(objectMapper);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public JwtResourceServerCustomizer jwtResourceServerCustomizer(
+            JwtAuthenticationConverter jwtAuthenticationConverter, SecurityErrorHandler securityErrorHandler) {
+        return new JwtResourceServerCustomizer(jwtAuthenticationConverter, securityErrorHandler);
     }
 
     /** Class proxies keep {@code @RestController} visible on controllers that implement generated API interfaces. */

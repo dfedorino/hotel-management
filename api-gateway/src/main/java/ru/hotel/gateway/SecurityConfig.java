@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import ru.hotel.security.jwt.JwtResourceServerConfigurer;
+import ru.hotel.security.jwt.JwtResourceServerCustomizer;
 
 /**
  * First line of defence: requests without a valid, unexpired token never reach a service. Only authentication is
@@ -19,8 +19,10 @@ public class SecurityConfig {
 
     @Bean
     @SuppressWarnings("PMD.SignatureDeclareThrowsException") // HttpSecurity.build() declares Exception
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.with(new JwtResourceServerConfigurer(), configurer -> {})
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtResourceServerCustomizer jwtResourceServer)
+            throws Exception {
+        return jwtResourceServer
+                .customize(http)
                 .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.POST, PUBLIC_POSTS)
                         .permitAll()
                         .requestMatchers(HEALTH_PATH)

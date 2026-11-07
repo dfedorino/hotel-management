@@ -8,7 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import ru.hotel.security.jwt.JwtResourceServerConfigurer;
+import ru.hotel.security.jwt.JwtResourceServerCustomizer;
 
 /** Registration and login are public; everything else needs a token, roles are checked by {@code @PreAuthorize}. */
 @Configuration
@@ -28,8 +28,12 @@ public class SecurityConfig {
     @Bean
     @SuppressWarnings("PMD.SignatureDeclareThrowsException") // HttpSecurity.build() declares Exception
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http, @Value("${booking.api-docs.enabled}") boolean apiDocsEnabled) throws Exception {
-        return http.with(new JwtResourceServerConfigurer(), configurer -> {})
+            HttpSecurity http,
+            JwtResourceServerCustomizer jwtResourceServer,
+            @Value("${booking.api-docs.enabled}") boolean apiDocsEnabled)
+            throws Exception {
+        return jwtResourceServer
+                .customize(http)
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.POST, PUBLIC_POSTS).permitAll();
                     auth.requestMatchers(HEALTH_PATH).permitAll();

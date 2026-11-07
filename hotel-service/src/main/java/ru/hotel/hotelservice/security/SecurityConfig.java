@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import ru.hotel.security.jwt.JwtResourceServerConfigurer;
+import ru.hotel.security.jwt.JwtResourceServerCustomizer;
 
 /**
  * Path rules of Hotel Service on top of the shared JWT resource server; role checks per endpoint live in
@@ -27,8 +27,12 @@ public class SecurityConfig {
     @Bean
     @SuppressWarnings("PMD.SignatureDeclareThrowsException") // HttpSecurity.build() declares Exception
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http, @Value("${hotel.api-docs.enabled}") boolean apiDocsEnabled) throws Exception {
-        return http.with(new JwtResourceServerConfigurer(), configurer -> {})
+            HttpSecurity http,
+            JwtResourceServerCustomizer jwtResourceServer,
+            @Value("${hotel.api-docs.enabled}") boolean apiDocsEnabled)
+            throws Exception {
+        return jwtResourceServer
+                .customize(http)
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HEALTH_PATH).permitAll();
                     if (apiDocsEnabled) {
