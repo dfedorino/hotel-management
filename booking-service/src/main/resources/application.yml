@@ -79,4 +79,14 @@ resilience4j:
 
 # Every request is traced (no exporter: trace and span ids correlate the logs of all services).
 management.tracing.sampling.probability: 1.0
-logging.pattern.correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-},bookingId=%X{bookingId:-}] "
+
+# Console stays human-readable; the file gets one ECS JSON event per line (with traceId, spanId and MDC fields)
+# for log collectors.
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-},bookingId=%X{bookingId:-}] "
+  file:
+    name: ${LOG_FILE:logs/${spring.application.name}.json}
+  structured:
+    format:
+      file: ecs
