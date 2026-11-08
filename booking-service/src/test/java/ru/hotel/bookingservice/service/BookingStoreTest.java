@@ -19,6 +19,7 @@ import ru.hotel.bookingservice.domain.Booking;
 import ru.hotel.bookingservice.domain.BookingStatus;
 import ru.hotel.bookingservice.domain.Role;
 import ru.hotel.bookingservice.domain.User;
+import ru.hotel.bookingservice.exception.ConflictException;
 import ru.hotel.bookingservice.repository.BookingRepository;
 import ru.hotel.bookingservice.repository.UserRepository;
 
@@ -66,6 +67,55 @@ class BookingStoreTest {
         // when / then
         assertThatThrownBy(() -> store.createPending(userId, 5L, START, END, "req-1"))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void userCannotHoldTwoBookingsForOverlappingDates() {
+        // given
+        store.createPending(userId, 5L, START, END, "req-1");
+
+        // when / then
+        assertThatThrownBy(() -> store.createPending(userId, 6L, START.plusDays(2), END.plusDays(2), "req-2"))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("You already have a booking from 2027-01-10 to 2027-01-15 overlapping these dates");
+        assertThat(bookingRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void stayStartingOnCheckOutDayDoesNotOverlap() {
+        // given
+        store.createPending(userId, 5L, START, END, "req-1");
+
+        // when
+        store.createPending(userId, 6L, END, END.plusDays(3), "req-2");
+
+        // then
+        assertThat(bookingRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void cancelledBookingDoesNotBlockTheDates() {
+        // given
+        store.markCancelled(store.createPending(userId, 5L, START, END, "req-1").getId());
+
+        // when
+        store.createPending(userId, 6L, START, END, "req-2");
+
+        // then
+        assertThat(bookingRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void otherUsersMayBookTheSameDates() {
+        // given
+        store.createPending(userId, 5L, START, END, "req-1");
+        Long bob = userRepository.save(new User("bob", "hash", Role.USER)).getId();
+
+        // when
+        store.createPending(bob, 6L, START, END, "req-2");
+
+        // then
+        assertThat(bookingRepository.count()).isEqualTo(2);
     }
 
     @Test

@@ -178,6 +178,22 @@ class BookingFlowIntegrationTest {
     }
 
     @Test
+    void secondBookingForTheSameDatesIsRefusedBeforeAskingTheHotel() throws Exception {
+        // given
+        HOTEL.stubFor(post(CONFIRM_PATH).willReturn(reservation()));
+        book(aliceToken, "req-1").andExpect(status().isCreated());
+
+        // when / then
+        book(aliceToken, "req-2")
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message")
+                        .value("You already have a booking from %s to %s overlapping these dates"
+                                .formatted(START, END)));
+        assertThat(bookingRepository.count()).isEqualTo(1);
+        HOTEL.verify(0, confirmsOf(5L, "req-2"));
+    }
+
+    @Test
     void usersSeeOnlyTheirOwnBookings() throws Exception {
         // given
         HOTEL.stubFor(post(CONFIRM_PATH).willReturn(reservation()));

@@ -17,6 +17,9 @@ public class SecurityConfig {
     private static final String[] PUBLIC_POSTS = {"/api/bookings/users/register", "/api/bookings/users/auth"};
     private static final String HEALTH_PATH = "/actuator/health";
 
+    /** Static browser client (src/main/resources/static); everything it calls under /api still needs a token. */
+    private static final String[] WEB_CLIENT_PATHS = {"/", "/index.html", "/ui/**"};
+
     @Bean
     @SuppressWarnings("PMD.SignatureDeclareThrowsException") // HttpSecurity.build() declares Exception
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtResourceServerCustomizer jwtResourceServer)
@@ -26,6 +29,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.POST, PUBLIC_POSTS)
                         .permitAll()
                         .requestMatchers(HEALTH_PATH)
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, WEB_CLIENT_PATHS)
                         .permitAll()
                         .anyRequest()
                         .authenticated())

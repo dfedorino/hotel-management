@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel booking</title>
+  <link rel="icon" href="data:,">
+  <!-- Plain ES modules from the CDN: every shared module (e.g. md-elevation) loads once, so no duplicate defines -->
+  <script type="importmap">
+    {
+      "imports": {
+        "@material/web/": "https://cdn.jsdelivr.net/npm/@material/web@2.5.0/",
+        "@lit/context": "https://cdn.jsdelivr.net/npm/@lit/context@1.1.6/index.js",
+        "@lit/context/": "https://cdn.jsdelivr.net/npm/@lit/context@1.1.6/",
+        "@lit/reactive-element": "https://cdn.jsdelivr.net/npm/@lit/reactive-element@2.1.2/reactive-element.js",
+        "@lit/reactive-element/": "https://cdn.jsdelivr.net/npm/@lit/reactive-element@2.1.2/",
+        "lit": "https://cdn.jsdelivr.net/npm/lit@3.3.3/index.js",
+        "lit/": "https://cdn.jsdelivr.net/npm/lit@3.3.3/",
+        "lit-element/": "https://cdn.jsdelivr.net/npm/lit-element@4.2.2/",
+        "lit-html": "https://cdn.jsdelivr.net/npm/lit-html@3.3.3/lit-html.js",
+        "lit-html/": "https://cdn.jsdelivr.net/npm/lit-html@3.3.3/",
+        "tslib": "https://cdn.jsdelivr.net/npm/tslib@2.9.1/tslib.es6.mjs"
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0" rel="stylesheet">
+  <link href="ui/app.css" rel="stylesheet">
+  <script type="module" src="ui/app.js"></script>
+</head>
+<body>
+  <!-- Signed out: login and registration -->
+  <main id="auth" class="auth" hidden>
+    <section class="auth__card">
+      <span class="material-symbols-outlined auth__logo" aria-hidden="true">hotel</span>
+      <h1 class="md-typescale-headline-small">Hotel booking</h1>
+      <section class="auth__demo" aria-label="Демо-вход">
+        <p class="md-typescale-label-large auth__hint">Демо-вход в один клик</p>
+        <div class="auth__demo-actions">
+          <md-filled-tonal-button data-demo="alice"><md-icon slot="icon">person</md-icon>user</md-filled-tonal-button>
+          <md-filled-tonal-button data-demo="admin"><md-icon slot="icon">admin_panel_settings</md-icon>admin</md-filled-tonal-button>
+        </div>
+      </section>
+      <p class="md-typescale-label-medium auth__divider">или войдите своим аккаунтом</p>
+      <md-tabs id="auth-tabs" aria-label="Вход или регистрация">
+        <md-primary-tab>Вход</md-primary-tab>
+        <md-primary-tab>Регистрация</md-primary-tab>
+      </md-tabs>
+      <form id="auth-form" class="form">
+        <md-outlined-text-field name="username" label="Имя пользователя" required minlength="3" maxlength="50"
+                                autocomplete="username"></md-outlined-text-field>
+        <md-outlined-text-field name="password" label="Пароль" type="password" required minlength="8"
+                                autocomplete="current-password"></md-outlined-text-field>
+        <md-filled-button id="auth-submit" type="submit">Войти</md-filled-button>
+      </form>
+    </section>
+  </main>
+
+  <!-- Signed in: app shell with navigation rail (medium+) or navigation bar (compact) -->
+  <div id="shell" class="shell" hidden>
+    <nav class="nav" aria-label="Разделы">
+      <button class="nav__item" data-view="rooms" data-role="USER">
+        <span class="nav__indicator"><md-ripple></md-ripple><span class="material-symbols-outlined">bed</span></span>
+        <span class="nav__label md-typescale-label-medium">Номера</span>
+      </button>
+      <button class="nav__item" data-view="bookings" data-role="USER">
+        <span class="nav__indicator"><md-ripple></md-ripple><span class="material-symbols-outlined">event_available</span></span>
+        <span class="nav__label md-typescale-label-medium">Мои брони</span>
+      </button>
+      <button class="nav__item" data-view="occupancy" data-role="ADMIN" hidden>
+        <span class="nav__indicator"><md-ripple></md-ripple><span class="material-symbols-outlined">monitoring</span></span>
+        <span class="nav__label md-typescale-label-medium">Загрузка</span>
+      </button>
+    </nav>
+
+    <div class="shell__content">
+      <header class="top-bar">
+        <h1 id="view-title" class="md-typescale-title-large top-bar__title">Номера</h1>
+        <span id="user-name" class="md-typescale-label-large top-bar__user"></span>
+        <md-icon-button id="logout" aria-label="Выйти"><md-icon>logout</md-icon></md-icon-button>
+      </header>
+      <md-linear-progress id="busy" indeterminate hidden></md-linear-progress>
+
+      <!-- Rooms: recommendations and booking -->
+      <main class="view" data-view="rooms">
+        <form id="search-form" class="filters">
+          <md-outlined-text-field name="startDate" label="Заезд" type="date" required></md-outlined-text-field>
+          <md-outlined-text-field name="endDate" label="Выезд" type="date" required></md-outlined-text-field>
+          <md-outlined-select id="hotel-select" name="hotelId" label="Отель">
+            <md-select-option value="" selected><div slot="headline">Все отели</div></md-select-option>
+          </md-outlined-select>
+          <md-filled-button type="submit"><md-icon slot="icon">search</md-icon>Подобрать</md-filled-button>
+        </form>
+        <div id="auto-select" class="banner" hidden>
+          <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+          <p class="md-typescale-body-medium banner__text">
+            Номера отсортированы по загрузке: сначала те, где останавливались реже всего.
+            Автоподбор возьмёт первый свободный.
+          </p>
+          <md-filled-tonal-button id="auto-book">Забронировать автоматически</md-filled-tonal-button>
+        </div>
+        <p id="rooms-empty" class="empty md-typescale-body-large">Выберите даты, чтобы увидеть свободные номера.</p>
+        <div id="rooms" class="grid"></div>
+      </main>
+
+      <!-- Own bookings -->
+      <main class="view" data-view="bookings" hidden>
+        <p id="bookings-empty" class="empty md-typescale-body-large" hidden>Бронирований пока нет.</p>
+        <div id="bookings" class="list"></div>
+        <div class="more"><md-outlined-button id="bookings-more" hidden>Показать ещё</md-outlined-button></div>
+      </main>
+
+      <!-- Occupancy statistics (ADMIN) -->
+      <main class="view" data-view="occupancy" hidden>
+        <form id="occupancy-form" class="filters">
+          <md-outlined-text-field name="startDate" label="С" type="date" required></md-outlined-text-field>
+          <md-outlined-text-field name="endDate" label="По" type="date" required></md-outlined-text-field>
+          <md-filled-button type="submit"><md-icon slot="icon">query_stats</md-icon>Показать</md-filled-button>
+        </form>
+        <section id="occupancy-summary" class="summary" hidden></section>
+        <div id="occupancy" class="list"></div>
+      </main>
+    </div>
+  </div>
+
+  <md-dialog id="cancel-dialog">
+    <div slot="headline">Отменить бронирование?</div>
+    <form slot="content" id="cancel-dialog-form" method="dialog">
+      <span id="cancel-dialog-text" class="md-typescale-body-medium"></span>
+    </form>
+    <div slot="actions">
+      <md-text-button form="cancel-dialog-form" value="keep">Оставить</md-text-button>
+      <md-text-button form="cancel-dialog-form" value="cancel">Отменить бронь</md-text-button>
+    </div>
+  </md-dialog>
+
+  <div id="snackbar" class="snackbar md-typescale-body-medium" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
